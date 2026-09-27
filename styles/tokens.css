@@ -1,0 +1,810 @@
+/* ==========================================================================
+   GARSAME v3 — design tokens
+   --------------------------------------------------------------------------
+   The single source of truth for every colour, type level, space, radius,
+   shadow and motion value in this project.
+
+   CLAUDE.md rule 1: components reference tokens, never raw values. If a value
+   is missing here, add it here first — do not write a hex into a component.
+
+   Values come from docs/02-DESIGN-SYSTEM.md. Where that document is silent,
+   the value is lifted verbatim out of the matching file in design/ and the
+   source is named in a comment. Nothing is rounded to a 4/8px grid and no
+   Tailwind default is substituted.
+
+   Tailwind v4 reads @theme and emits every token below as a CSS custom
+   property on :root, so var(--color-blue) and bg-blue are the same token.
+   ========================================================================== */
+
+/* `static` emits every token below as a CSS custom property whether or not a
+   utility happens to use it. Without it Tailwind tree-shakes the unused ones,
+   and --ease-entrance, the durations and the radii would not exist at runtime
+   for Framer Motion and for hand-written CSS to read. */
+@theme static {
+  /* ------------------------------------------------------------------
+     Tailwind's own palette, type scale, fonts, breakpoints and shadows are
+     cleared. Only the values below exist, so bg-blue-500, text-xl or
+     shadow-lg fail to generate rather than quietly entering the design.
+     ------------------------------------------------------------------ */
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --leading-*: initial;
+  --tracking-*: initial;
+  --breakpoint-*: initial;
+  --shadow-*: initial;
+
+  /* === COLOUR ====================================================== */
+
+  /* keywords kept so borders and fills can opt out */
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-inherit: inherit;
+
+  /* surfaces */
+  --color-white: #ffffff;
+  --color-tint: #f5f7fe; /* alternating section background */
+  --color-tint-soft: #f7f9ff; /* form panels, inset cards */
+  --color-accent-soft: #edf0fe; /* icon tiles, image placeholders */
+  --color-accent-wash: #e8edfd; /* full-bleed break band */
+  --color-field: #f8faff; /* input fill — design/01-home */
+
+  /* ink */
+  --color-ink: #0e1533; /* headings, dark band background */
+  --color-ink-2: #3c4870; /* strong body */
+  --color-ink-3: #4a5573; /* labels, nav items, form labels — design/ */
+  /* The design system calls this --body. It is named --color-ink-body here
+     because Tailwind generates `text-*` utilities from BOTH the colour and the
+     font-size namespaces: a colour named `body` and a type level named `body`
+     both compile to `.text-body`, and the colour silently wins — which left
+     the Body type level applying no size at all. A colour may never share a
+     name with a type level. See DECISIONS.md D-014. */
+  --color-ink-body: #64708f; /* body text — the design system's --body */
+  --color-muted: #97a2c0; /* metadata, labels */
+  --color-muted-strong: #7d89ae; /* client names, admin icon strokes — design/ */
+  --color-faint: #b6c0de; /* numbers, disabled */
+
+  /* long-form prose — blog posts and project case studies */
+  --color-prose: #2b3453; /* article body — design/07-blog-post */
+  --color-prose-2: #5a6790; /* article secondary — design/02-about */
+
+  /* accent */
+  --color-blue: #3d5af1;
+  --color-blue-hover: #2b45d6;
+  --color-blue-light: #7b90ff; /* accent on dark backgrounds */
+  --color-blue-pale: #b9c6f5;
+  --color-blue-wash: #c9d2f7; /* pale rules, quote marks, avatars — design/ */
+
+  /* lines */
+  --color-border: #e4e8f7;
+  --color-border-strong: #dde3fa;
+  --color-border-header: #eef1fb;
+  --color-border-faint: #f1f4fd; /* table rows, chart gridlines — design/ */
+
+  /* status — on light surfaces */
+  --color-success: #1a7f4b;
+  --color-success-bg: #e6f5ed;
+  --color-warning: #b4690e;
+  --color-warning-bg: #fbf1e3;
+  --color-warning-tile: #fef3e4; /* hero badge icon tile — design/01-home */
+  --color-warning-ink: #6b4200; /* text on warning-bg — design/21-admin */
+  --color-danger: #c0342b;
+  --color-danger-bg: #fbeae9;
+  --color-danger-ink: #7a211b; /* text on danger-bg — design/21-admin */
+  --color-danger-row: #fff9f9; /* failed row — design/24-admin-mail-log */
+  --color-danger-line: #f0c9c6; /* archive button outline — design/28-admin-project-editor */
+  --color-neutral-bg: #eef1f9; /* Concept chip — design/27-admin-projects */
+  --color-accent-ink: #24356f; /* text on accent-soft — design/21-admin */
+
+  /* status — on the ink band (project detail header) */
+  --color-warning-on-ink: #ffd9a6;
+  --color-warning-on-ink-bg: #3a2e1a;
+  /* Only "Building" is drawn on ink. The other three are mixed from their own
+     status colour the same way, rather than given new hues. D-073. */
+  --color-success-on-ink: color-mix(in oklab, var(--color-success) 30%, white);
+  --color-success-on-ink-bg: color-mix(
+    in oklab,
+    var(--color-success) 28%,
+    var(--color-ink)
+  );
+  --color-accent-on-ink: color-mix(in oklab, var(--color-blue) 30%, white);
+  --color-accent-on-ink-bg: color-mix(
+    in oklab,
+    var(--color-blue) 28%,
+    var(--color-ink)
+  );
+  --color-neutral-on-ink: var(--color-on-ink-body);
+  --color-neutral-on-ink-bg: var(--color-on-ink-panel);
+
+  /* on dark surfaces */
+  --color-on-ink-body: #96a1c4; /* paragraph on the ink band */
+  --color-on-ink-soft: #4b5985; /* v3 card body — design/01-home */
+  --color-on-ink-panel: #2b3766; /* editor chrome — design/26-admin-editor */
+  --color-on-ink-lead: #b3bcd8; /* summary on the project header — design/05-project-detail */
+  --color-on-ink-meta: #7b8ab8; /* breadcrumb and year on ink — design/05-project-detail */
+  --color-on-ink-label: #6b7aa8; /* CLIENT, TYPE, MY ROLE on ink — design/05-project-detail */
+  --color-on-blue-body: #c9d2fb; /* paragraph in the blue band */
+  --color-on-blue-muted: #b9c6ff; /* eyebrow in the blue band */
+
+  --color-code-text: #d6dcf0; /* code on the ink block — design/07-blog-post */
+
+  /* admin login decorative panel — design/20-admin-login */
+  --color-ink-deep: #16204a;
+  --color-ink-deep-2: #1c2859;
+  --color-on-ink-faint: #4a5688; /* the login footer line — design/20-admin-login */
+
+  /* hero — the three stacked circles, docs/03-PAGES.md */
+  --color-hero-circle-1: #eef2fe; /* 460px, outermost */
+  --color-hero-circle-2: #d7dffb; /* 370px */
+  /* the 280px innermost circle is --color-blue */
+
+  /* hero avatar stack and separators — design/01-home */
+  --color-avatar-1: #dde3fa;
+  --color-avatar-2: #c9d2f7;
+  --color-avatar-3: #b4c0f4;
+  --color-rule: #c2cbea; /* the vertical separators in the status line */
+
+  /* placeholder artwork — image drop zones and empty states */
+  --color-placeholder-glass: rgb(255 255 255 / 0.55); /* hero portrait slot */
+  --color-placeholder-line: #a8b6ee;
+  --color-placeholder-ink: #8c9ce4;
+  --color-placeholder-ink-2: #7e8cc9;
+  --color-placeholder-ink-3: #a3afd8;
+  --color-placeholder-icon: #5e6fc4;
+
+  /* === TYPOGRAPHY ================================================== */
+
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* Named levels only. docs/02-DESIGN-SYSTEM.md rule 4: there is no arbitrary
+     font size anywhere in this project — not in a component, not in the admin
+     editor. Each level carries its own line height, tracking and weight, so
+     text-h2 is the whole level and never just a size. */
+
+  --text-display: 52px;
+  --text-display--line-height: 1.12;
+  --text-display--letter-spacing: -0.035em;
+  --text-display--font-weight: 800;
+
+  --text-h1: 40px;
+  --text-h1--line-height: 1.18;
+  --text-h1--letter-spacing: -0.03em;
+  --text-h1--font-weight: 800;
+
+  --text-h2: 30px;
+  --text-h2--line-height: 1.25;
+  --text-h2--letter-spacing: -0.025em;
+  --text-h2--font-weight: 700;
+
+  --text-h3: 20px;
+  --text-h3--line-height: 1.35;
+  --text-h3--letter-spacing: -0.02em;
+  --text-h3--font-weight: 700;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 1.7;
+  --text-body-lg--letter-spacing: 0;
+
+  --text-body: 15px;
+  --text-body--line-height: 1.7;
+  --text-body--letter-spacing: 0;
+
+  --text-small: 14px;
+  --text-small--line-height: 1.6;
+  --text-small--letter-spacing: 0;
+
+  --text-caption: 13px;
+  --text-caption--line-height: 1.5;
+  --text-caption--letter-spacing: 0;
+
+  --text-mono-label: 12px;
+  --text-mono-label--line-height: 1.4;
+  --text-mono-label--letter-spacing: 0.14em;
+  --text-mono-label--font-weight: 500;
+
+  --text-mono-meta: 11px;
+  --text-mono-meta--line-height: 1.4;
+  --text-mono-meta--letter-spacing: 0.08em;
+  --text-mono-meta--font-weight: 500;
+
+  /* the wider mono eyebrow — design/11-404 "OR TRY", design/01-home
+     "// YOUR TURN" on the ink card */
+  --text-mono-eyebrow: 11px;
+  --text-mono-eyebrow--line-height: 1.4;
+  --text-mono-eyebrow--letter-spacing: 0.12em;
+  --text-mono-eyebrow--font-weight: 500;
+
+  /* the 404 numeral — design/11-404 */
+  --text-numeral: 72px;
+  --text-numeral--line-height: 1;
+  --text-numeral--letter-spacing: -0.04em;
+  --text-numeral--font-weight: 600;
+  --text-numeral-sm: 56px;
+  --text-numeral-sm--line-height: 1;
+  --text-numeral-sm--letter-spacing: -0.04em;
+  --text-numeral-sm--font-weight: 600;
+
+  /* status chips and index overlays — design/04-projects, design/01-home */
+  --text-mono-chip: 10px;
+  --text-mono-chip--line-height: 1.4;
+  --text-mono-chip--letter-spacing: 0.08em;
+  --text-mono-chip--font-weight: 400;
+
+  /* Card and item titles. design/01-home uses 18px and 17px bold titles that
+     sit between H3 (20px) and Body large (16px); they are levels here so no
+     component writes a raw size. */
+  --text-h4: 18px; /* service, promise and blog card titles */
+  --text-h4--line-height: 1.35;
+  --text-h4--letter-spacing: 0;
+  --text-h4--font-weight: 700;
+
+  --text-h5: 17px; /* the v1/v2/v3 cards, the process steps */
+  --text-h5--line-height: 1.35;
+  --text-h5--letter-spacing: 0;
+  --text-h5--font-weight: 700;
+
+  /* The membership heading on the ink band — design/01-home section 12 draws
+     it at 36px, smaller than the 40px section level, beside the join form. */
+  --text-h1-band: 36px;
+  --text-h1-band--line-height: 1.2;
+  --text-h1-band--letter-spacing: -0.03em;
+  --text-h1-band--font-weight: 800;
+
+  /* the "Working with" client names — design/01-home section 08 */
+  --text-client: 19px;
+  --text-client--line-height: 1.35;
+  --text-client--letter-spacing: 0;
+  --text-client--font-weight: 700;
+
+  /* Inner page titles. The approved pages draw 48px (about, services,
+     projects, testimonials, membership), 46px (contact, project detail) and
+     44px (blog post); one level, the majority size — D-041. */
+  --text-page-title: 48px;
+  --text-page-title--line-height: 1.14;
+  --text-page-title--letter-spacing: -0.035em;
+  --text-page-title--font-weight: 800;
+
+  /* the client quote on a project page — design/05-project-detail */
+  --text-quote: 22px;
+  --text-quote--line-height: 1.65;
+  --text-quote--letter-spacing: 0;
+  --text-quote--font-weight: 500;
+
+  /* code blocks — design/07-blog-post */
+  --text-mono-code: 14px;
+  --text-mono-code--line-height: 1.7;
+  --text-mono-code--letter-spacing: 0;
+
+  /* the admin dashboard tile figures — design/21-admin-dashboard */
+  --text-stat: 30px;
+  --text-stat--line-height: 1.1;
+  --text-stat--letter-spacing: -0.03em;
+  --text-stat--font-weight: 800;
+
+  /* Small sans sizes below Caption — design/01-home. */
+  --text-fine: 12px; /* the reassurance line under the membership form */
+  --text-fine--line-height: 1.5;
+  --text-fine--letter-spacing: 0;
+  --text-micro: 11px; /* the "+1" count on the hero avatar stack */
+  --text-micro--line-height: 1;
+  --text-micro--letter-spacing: 0;
+  --text-micro--font-weight: 700;
+
+  /* mobile heading levels — compose as: text-display-sm lg:text-display */
+  --text-display-sm: 36px;
+  --text-display-sm--line-height: 1.12;
+  --text-display-sm--letter-spacing: -0.035em;
+  --text-display-sm--font-weight: 800;
+
+  --text-h1-sm: 30px;
+  --text-h1-sm--line-height: 1.18;
+  --text-h1-sm--letter-spacing: -0.03em;
+  --text-h1-sm--font-weight: 800;
+
+  --text-h2-sm: 24px;
+  --text-h2-sm--line-height: 1.25;
+  --text-h2-sm--letter-spacing: -0.025em;
+  --text-h2-sm--font-weight: 700;
+
+  /* The wordmark — a brand mark, not a text level, but tokenised so no
+     component writes its metrics by hand.
+
+     design/01-home.html draws the shell slightly larger than every other
+     page (22px wordmark, 84px header, 32px nav gap). Ten of the eleven public
+     screens agree on 21px / 76px / 30px, and the header is one global
+     component, so the majority is canonical. See DECISIONS.md D-021. */
+  --text-wordmark: 21px; /* site header — design/02-about and 9 others */
+  --text-wordmark--letter-spacing: -0.03em;
+  --text-wordmark--font-weight: 800;
+  --text-wordmark-sm: 18px; /* site footer */
+  --text-wordmark-sm--letter-spacing: -0.03em;
+  --text-wordmark-sm--font-weight: 800;
+  --text-wordmark-admin: 18px; /* admin sidebar */
+  --text-wordmark-admin--letter-spacing: -0.03em;
+  --text-wordmark-admin--font-weight: 800;
+
+  /* the v3 chip beside the wordmark — mono, uppercase, on blue */
+  --text-chip: 11px; /* site header */
+  --text-chip--line-height: 1;
+  --text-chip--font-weight: 600;
+  --text-chip-sm: 10px; /* site footer, admin sidebar */
+  --text-chip-sm--line-height: 1;
+  --text-chip-sm--font-weight: 600;
+
+  /* long-form article body — docs/03-PAGES.md, /blog/[slug] */
+  --text-article: 19px;
+  --text-article--line-height: 1.7;
+  --text-article-sm: 17px;
+  --text-article-sm--line-height: 1.7;
+
+  /* Line heights, for the cases where a level needs one that is not its own —
+     a 13px checkbox label at 1.6 rather than the caption level's 1.5, say.
+     Tailwind's own scale is cleared, so `leading-relaxed` is 1.7 here and not
+     the framework's 1.625. Every value is one the approved screens use. */
+  --leading-display: 1.12;
+  --leading-h1: 1.18;
+  --leading-h2: 1.25;
+  --leading-h3: 1.35;
+  --leading-tight: 1.4; /* mono labels and metadata */
+  --leading-snug: 1.5; /* captions */
+  --leading-normal: 1.6; /* small text, card descriptions */
+  --leading-cozy: 1.65; /* the card body measure used across design/ */
+  --leading-relaxed: 1.7; /* body and article */
+  --leading-loose: 1.75; /* the longer about and FAQ paragraphs */
+  --leading-case: 1.8; /* project case study body — design/05-project-detail */
+
+  /* Letter spacing, for overriding a level's own tracking — a 12px mono
+     status line at 0.08em rather than the mono-label level's 0.14em, say.
+     Tailwind's scale is cleared; these are the values design/ uses. */
+  --tracking-none: 0;
+  --tracking-snug: -0.015em; /* blog card titles */
+  --tracking-mono: 0.06em; /* bracketed placeholder labels */
+  --tracking-meta: 0.08em; /* the hero status line, chips */
+  --tracking-wide: 0.1em; /* badge labels, categories, contact labels */
+  --tracking-eyebrow: 0.12em;
+  --tracking-label: 0.14em;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* === SPACE ======================================================= */
+
+  /* 4px base, so p-1 = 4px, p-5 = 20px, p-11 = 44px, p-30 = 120px.
+     Held in px, not rem, because the design is specified in px. */
+  --spacing: 4px;
+
+  --spacing-gutter: 120px; /* page gutter, desktop */
+  --spacing-gutter-sm: 24px; /* page gutter, mobile */
+  --spacing-section: 92px; /* section padding block, desktop */
+  --spacing-section-sm: 56px; /* section padding block, mobile */
+
+  /* Wordmark and v3 chip geometry. Off the 4px scale on purpose — these are
+     the exact values in design/01-home and design/21-admin, and START-HERE.md
+     says to lift them verbatim rather than round them to the grid. */
+  --spacing-wordmark-gap: 9px;
+  --spacing-chip-x: 8px; /* site header chip */
+  --spacing-chip-y: 5px;
+  --spacing-chip-sm-x: 7px; /* site footer chip */
+  --spacing-chip-sm-y: 4px;
+  --spacing-chip-admin-x: 6px; /* admin sidebar chip */
+
+  /* Button, field and chip geometry. Also off the 4px scale on purpose —
+     these are the measured values in design/01-home and design/10-contact. */
+  --spacing-btn-y: 16px; /* primary, md */
+  --spacing-btn-x: 28px;
+  --spacing-btn-inner-y: 15px; /* secondary md inner, 1px less for the wrapper */
+  --spacing-btn-inner-x: 26px;
+  --spacing-btn-sm-y: 13px; /* small button */
+  --spacing-btn-sm-x: 22px;
+  --spacing-btn-sm-inner-y: 12px; /* secondary sm inner */
+  --spacing-btn-sm-inner-x: 22px;
+  --spacing-btn-nav-y: 11px; /* header CTA — design/02-about and 9 others */
+  --spacing-btn-nav-x: 20px;
+  --spacing-btn-gap: 11px; /* label to icon, md */
+  --spacing-btn-gap-sm: 9px; /* label to icon, sm and ghost */
+
+  --spacing-field-y: 15px; /* input, select and textarea padding */
+  --spacing-field-x: 16px;
+  --spacing-field-gap: 7px; /* label to control */
+  --spacing-field-sm-y: 11px; /* admin editor fields — design/28-admin-project-editor */
+  --spacing-field-sm-x: 13px;
+  --spacing-field-gap-sm: 6px;
+  --spacing-check: 18px; /* checkbox box */
+  --spacing-check-gap: 10px; /* box to label */
+
+  --spacing-status-y: 4px; /* status chip */
+  --spacing-status-x: 8px;
+  --spacing-pill-y: 9px; /* filter pill — design/04-projects */
+  --spacing-pill-x: 18px;
+
+  --spacing-tile: 46px; /* icon tile, default */
+  --spacing-tile-lg: 44px; /* contact row tile — design/01-home */
+  --spacing-tile-sm: 36px; /* hero badge tile — design/01-home */
+
+  --spacing-heading-gap: 14px; /* eyebrow to heading, centred */
+  --spacing-heading-gap-left: 12px; /* eyebrow to heading, left aligned */
+
+  --spacing-card-lift: 2px; /* card hover lift — in the spacing namespace so
+                               -translate-y-card-lift generates */
+  --spacing-cover: 182px; /* project card cover height — design/01-home */
+  --spacing-cover-post: 158px; /* blog card cover height — design/01-home */
+  --spacing-break: 340px; /* full-bleed break band height — design/01-home */
+  --spacing-break-sm: 220px; /* the same band below 768px — D-037 */
+  --spacing-avatar: 34px; /* hero proof-row avatars */
+  --spacing-avatar-overlap: 11px; /* how far each avatar tucks under the last */
+  --spacing-author: 42px; /* testimonial author avatar */
+  --spacing-textarea: 116px; /* home contact form message box */
+
+  /* The project pages — design/04-projects.html, design/05-project-detail.html */
+  --spacing-cover-detail: 420px; /* the cover band under the ink header */
+  --spacing-cover-detail-sm: 240px; /* the same band below 768px — D-073 */
+  --spacing-rail: 280px; /* the stack / team / timeline rail */
+  --spacing-rail-top: 100px; /* the rail sticks this far below the top */
+
+  /* The 404 circles — design/11-404. The -sm values are 78% of the desktop
+     ones, the same reduction the design system gives the hero circles at
+     mobile width. Sized rather than scaled, so the wrapper keeps a real
+     layout box and the circles cannot paint over the heading below. */
+  --spacing-circle-404: 280px;
+  --spacing-circle-404-inner: 210px;
+  --spacing-circle-404-sm: 218px;
+  --spacing-circle-404-inner-sm: 164px;
+
+  /* The shell — design/02-about.html and the eight pages that match it */
+  --spacing-header: 76px; /* sticky header height */
+  --spacing-nav-gap: 30px; /* between nav links */
+  --spacing-footer-y: 34px; /* footer padding block */
+  --spacing-footer-nav-gap: 26px; /* between footer links — design/01-home */
+
+  /* The admin shell — design/21-admin-dashboard.html */
+  /* The design files have no box-sizing reset, so a width there excludes its
+     padding: the sidebar is drawn width 248px plus 14px each side and renders
+     276px; the sign-in card is 420px plus 40px each side. These are the
+     rendered widths, for border-box. D-065. */
+  --spacing-sidebar: 276px;
+  --spacing-topbar: 68px;
+  --spacing-topbar-editor: 64px; /* the editor top bar — design/28-admin-project-editor */
+  --spacing-editor-rail: 340px; /* the editor right rail — design/28-admin-project-editor */
+  --spacing-btn-xs-y: 10px; /* admin top-bar buttons */
+  --spacing-btn-xs-x: 16px;
+  --spacing-btn-xs-inner-y: 9px;
+  --spacing-btn-xs-inner-x: 15px;
+
+  /* Section padding, where a band differs from the 92px default — design/01-home */
+  --spacing-hero-top: 72px;
+  --spacing-hero-bottom: 84px;
+  --spacing-band: 54px; /* the blue promise band */
+  --spacing-band-sm: 50px; /* the clients row */
+  --spacing-ink-band: 74px; /* the membership band */
+
+  --container-content: 1200px; /* content max width */
+  --container-article: 680px; /* article measure */
+
+  /* Paragraph measures. The design system names only the 1200px content width
+     and the 680px article measure; these are the per-section widths the
+     approved screens actually use, so they are tokens rather than one-off
+     values in components. */
+  --container-sub: 520px; /* centred section sub — design/01-home services */
+  --container-sub-md: 540px; /* centred sub — design/01-home process */
+  --container-sub-wide: 560px; /* left-aligned sub — design/01-home blog */
+  --container-sub-ink: 430px; /* paragraph on the ink band */
+  --container-prose: 460px; /* hero paragraph, 404 paragraph */
+  --container-intro: 700px; /* inner page intro — design/04-projects */
+  --container-lead: 600px; /* summary on the project header — design/05-project-detail */
+  --container-quote: 760px; /* the client quote — design/05-project-detail */
+  --container-canvas: 720px; /* the editor canvas — design/26-admin-editor */
+  --container-login: 500px; /* the admin sign-in card, padding included — design/20-admin-login, D-065 */
+
+  /* === SHAPE ======================================================= */
+
+  --radius-card: 14px; /* cards, panels */
+  --radius-input: 8px; /* forms, inputs */
+  --radius-tile: 12px; /* icon tiles */
+  --radius-chip: 5px; /* chips, status badges */
+  --radius-check: 4px; /* checkbox — design/08-testimonials */
+  --radius-pill: 999px; /* filter pills — design/04-projects */
+  --radius-tile-sm: 10px; /* hero badge icon tile — design/01-home */
+  --radius-bar: 4px; /* chart bar tops — design/21-admin-dashboard */
+
+  /* Two shadows exist. docs/02-DESIGN-SYSTEM.md: nothing else casts a shadow. */
+  --shadow-card: 0 1px 2px rgba(14, 21, 51, 0.04);
+  --shadow-badge: 0 10px 30px rgba(14, 21, 51, 0.09);
+
+  /* === MOTION ====================================================== */
+
+  /* One easing for entrances. Nothing overshoots or bounces. */
+  --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* === BREAKPOINTS ================================================= */
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* ==========================================================================
+   Tokens with no Tailwind namespace.
+   Reference them by name — duration-(--duration-hover) in a class, or
+   var(--duration-hover) in CSS and in the Framer Motion config.
+   ========================================================================== */
+
+:root {
+  /* motion durations — docs/02-DESIGN-SYSTEM.md */
+  --duration-hover: 150ms; /* hover, focus */
+  --duration-move: 250ms; /* elements entering and leaving */
+  --duration-reveal: 400ms; /* section reveals */
+  --duration-page: 600ms; /* page transitions */
+  --duration-press: 100ms; /* button press to 0.98 */
+  --duration-underline: 180ms; /* link underline grows from the left */
+  --duration-card: 200ms; /* card border, lift and cover scale */
+
+  /* Card hover — docs/02-DESIGN-SYSTEM.md. The lift is --spacing-card-lift so
+     that Tailwind can generate a utility from it; the cover scale of 1.02 is
+     written as `scale-102`, since Tailwind has no --scale-* namespace. */
+
+  /* hero headline rotation — docs/02-DESIGN-SYSTEM.md */
+  --duration-word-out: 200ms;
+  --duration-word-in: 300ms;
+  --duration-word-hold: 2500ms;
+
+  /* section reveal */
+  --reveal-rise: 16px;
+  --reveal-stagger: 60ms;
+  --page-rise: 12px;
+
+  /* the clipped corner — the signature.
+     Buttons and the v3 badge only. Cards, panels, inputs and images stay
+     plain rounded. The -inner values are for the two-layer outlined button:
+     an outer div in --color-border-strong with 1px padding, an inner div in
+     --color-white clipped one pixel smaller. */
+  --clip-md: 13px; /* primary and secondary button */
+  --clip-md-inner: 12px;
+  --clip-sm: 12px; /* small button */
+  --clip-sm-inner: 11px;
+  --clip-nav: 11px; /* nav CTA */
+  --clip-xs: 10px; /* admin top-bar buttons — design/21-admin-dashboard */
+  --clip-xs-inner: 9px;
+  --clip-badge: 6px; /* v3 badge, header */
+  --clip-badge-sm: 5px; /* v3 badge, footer and admin sidebar */
+
+  /* focus ring — 2px blue, 2px offset */
+  --focus-ring: 2px;
+  --focus-offset: 2px;
+
+  /* hero entrance — "status line, heading, paragraph, buttons, proof row,
+     80ms apart" */
+  --hero-stagger: 80ms;
+
+  /* ------------------------------------------------------------------
+     The hero art — design/01-home.html section 01.
+
+     Every value is the measured desktop value multiplied by --hero-scale,
+     which is 0.78 below 1024px: docs/02-DESIGN-SYSTEM.md, "the hero circles
+     scale to 78%". Computed rather than rounded, so the proportions of the
+     approved screen hold at every width. Use as size-(--hero-circle-1).
+     ------------------------------------------------------------------ */
+  --hero-scale: 0.78;
+
+  --hero-art-w: calc(580px * var(--hero-scale)); /* the grid column at 1440 */
+  --hero-art-h: calc(560px * var(--hero-scale));
+
+  --hero-circle-1: calc(460px * var(--hero-scale)); /* --color-hero-circle-1 */
+  --hero-circle-2: calc(370px * var(--hero-scale)); /* --color-hero-circle-2 */
+  --hero-circle-3: calc(280px * var(--hero-scale)); /* --color-blue */
+  --hero-circle-1-bottom: calc(28px * var(--hero-scale));
+  --hero-circle-2-bottom: calc(58px * var(--hero-scale));
+  --hero-circle-3-bottom: calc(88px * var(--hero-scale));
+
+  /* the portrait stands taller than the circles so the head breaks above them */
+  --hero-portrait-w: calc(300px * var(--hero-scale));
+  --hero-portrait-h: calc(500px * var(--hero-scale));
+  --hero-portrait-bottom: calc(28px * var(--hero-scale));
+  --hero-portrait-arch: calc(150px * var(--hero-scale));
+
+  /* the three floating badges */
+  --hero-badge-1-top: calc(74px * var(--hero-scale));
+  --hero-badge-1-left: calc(-10px * var(--hero-scale));
+  --hero-badge-2-top: calc(236px * var(--hero-scale));
+  --hero-badge-2-right: calc(-22px * var(--hero-scale));
+  --hero-badge-3-bottom: calc(44px * var(--hero-scale));
+  --hero-badge-3-left: calc(-34px * var(--hero-scale));
+}
+
+@media (width >= 1024px) {
+  :root {
+    --hero-scale: 1;
+  }
+}
+
+/* On a narrow phone the art column is the full content width, so the badges'
+   negative offsets reach past the 24px gutter: at 390px the "I reply in" badge
+   ran 3px off the left edge and had its border clipped. Below 640px each
+   overhang is capped at 12px, which keeps every badge whole and 12px clear of
+   the screen edge. Wider than that, the art column is narrower than the
+   content and the measured offsets fit as drawn. */
+@media (width < 640px) {
+  :root {
+    --hero-badge-1-left: max(calc(-10px * var(--hero-scale)), -12px);
+    --hero-badge-2-right: max(calc(-22px * var(--hero-scale)), -12px);
+    --hero-badge-3-left: max(calc(-34px * var(--hero-scale)), -12px);
+  }
+}
+
+/* ==========================================================================
+   The signature, as utilities, so no component ever writes the polygon out.
+   ========================================================================== */
+
+@utility clip-corner {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--clip-md)) 0,
+    100% var(--clip-md),
+    100% 100%,
+    0 100%
+  );
+}
+
+@utility clip-corner-inner {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--clip-md-inner)) 0,
+    100% var(--clip-md-inner),
+    100% 100%,
+    0 100%
+  );
+}
+
+@utility clip-corner-sm {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--clip-sm)) 0,
+    100% var(--clip-sm),
+    100% 100%,
+    0 100%
+  );
+}
+
+@utility clip-corner-sm-inner {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--clip-sm-inner)) 0,
+    100% var(--clip-sm-inner),
+    100% 100%,
+    0 100%
+  );
+}
+
+@utility clip-corner-nav {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--clip-nav)) 0,
+    100% var(--clip-nav),
+    100% 100%,
+    0 100%
+  );
+}
+
+@utility clip-corner-xs {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--clip-xs)) 0,
+    100% var(--clip-xs),
+    100% 100%,
+    0 100%
+  );
+}
+
+@utility clip-corner-xs-inner {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--clip-xs-inner)) 0,
+    100% var(--clip-xs-inner),
+    100% 100%,
+    0 100%
+  );
+}
+
+@utility clip-corner-badge {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--clip-badge)) 0,
+    100% var(--clip-badge),
+    100% 100%,
+    0 100%
+  );
+}
+
+@utility clip-corner-badge-sm {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--clip-badge-sm)) 0,
+    100% var(--clip-badge-sm),
+    100% 100%,
+    0 100%
+  );
+}
+
+/* ==========================================================================
+   Transitions. Each property gets its own duration from the motion spec —
+   a button recolours over 150ms but presses over 100ms — which a single
+   `transition duration-*` class cannot express.
+   ========================================================================== */
+
+/* Tailwind 4 writes movement to the individual `translate` and `scale`
+   properties rather than to `transform`, so these name those properties.
+   Transitioning `transform` here would animate nothing and the lift would
+   jump. `transform` is kept alongside for any hand-written transform. */
+
+@utility transition-button {
+  transition:
+    background-color var(--duration-hover) ease,
+    color var(--duration-hover) ease,
+    border-color var(--duration-hover) ease,
+    scale var(--duration-press) ease,
+    transform var(--duration-press) ease;
+}
+
+@utility transition-card {
+  transition:
+    border-color var(--duration-card) var(--ease-entrance),
+    translate var(--duration-card) var(--ease-entrance),
+    transform var(--duration-card) var(--ease-entrance);
+}
+
+@utility transition-cover {
+  transition:
+    scale var(--duration-card) var(--ease-entrance),
+    transform var(--duration-card) var(--ease-entrance);
+}
+
+/* ==========================================================================
+   The hero entrance, in CSS rather than Framer Motion.
+
+   The hero heading is the Largest Contentful Paint. Framer Motion writes its
+   starting opacity of 0 into the server HTML and cannot lift it until its
+   JavaScript has downloaded and hydrated — seconds, on Somali 3G, and the LCP
+   target is 2.5s. A CSS animation starts on first paint with no JavaScript at
+   all. See DECISIONS.md D-032.
+
+   Set --enter-index on each element to stagger it by --hero-stagger.
+   ========================================================================== */
+
+@keyframes enter-rise {
+  from {
+    opacity: 0;
+    translate: 0 var(--reveal-rise);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@utility animate-enter {
+  animation: enter-rise var(--duration-reveal) var(--ease-entrance) both;
+  animation-delay: calc(var(--enter-index, 0) * var(--hero-stagger));
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   The rotating headline word. "Fade out 200ms, fade in 300ms" — sequential,
+   so the incoming word waits for the outgoing one to finish.
+   ========================================================================== */
+
+@utility word-out {
+  opacity: 0;
+  transition: opacity var(--duration-word-out) ease;
+}
+
+@utility word-in {
+  opacity: 1;
+  transition: opacity var(--duration-word-in) ease var(--duration-word-out);
+}

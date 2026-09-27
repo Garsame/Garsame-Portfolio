@@ -1,0 +1,13 @@
+.next
+node_modules
+public/uploads
+package-lock.json
+
+# Reference material and specification — never reformat.
+# design/ is the approved screens; docs/ CLAUDE.md and START-HERE.md are the
+# source of truth this project is built from.
+design
+docs
+CLAUDE.md
+START-HERE.md
+AGENTS.md
