@@ -60,8 +60,15 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         key={pathname}
         data-reveal
         initial={hydrated ? { opacity: 0, y: PAGE.rise } : false}
-        animate={{ opacity: 1, y: 0, transition: { duration: PAGE.inDuration, ease: EASE_ENTRANCE } }}
-        exit={{ opacity: 0, transition: { duration: PAGE.outDuration, ease: EASE_ENTRANCE } }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          transition: { duration: PAGE.inDuration, ease: EASE_ENTRANCE },
+        }}
+        exit={{
+          opacity: 0,
+          transition: { duration: PAGE.outDuration, ease: EASE_ENTRANCE },
+        }}
       >
         {children}
       </motion.div>

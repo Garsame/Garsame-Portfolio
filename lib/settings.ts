@@ -3,6 +3,7 @@ import "server-only";
 import { dbConnect } from "@/lib/db";
 import { Settings } from "@/models";
 import {
+  bio as defaultBio,
   clients as defaultClients,
   contact as defaultContact,
   faq as defaultFaq,
@@ -10,6 +11,7 @@ import {
   process as defaultProcess,
   services as defaultServices,
   site as defaultSite,
+  socialLinks as defaultSocialLinks,
   type Availability,
   type HeroBadge,
 } from "@/lib/content/home";
@@ -62,7 +64,9 @@ export type PublicSiteSettings = {
   socialImage: PopulatedFile | null;
 };
 
-function mapToneToIcon(tone: "warning" | "success" | "accent"): "bolt" | "check" | "clock" {
+function mapToneToIcon(
+  tone: "warning" | "success" | "accent",
+): "bolt" | "check" | "clock" {
   switch (tone) {
     case "warning":
       return "bolt";
@@ -78,26 +82,45 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
   try {
     await dbConnect();
     const doc = await Settings.findOne({ key: "site" })
-      .populate<{ logo?: { _id: unknown; url: string; originalName: string; width?: number; height?: number } }>(
-        "logo",
-        "url originalName width height",
-      )
-      .populate<{ heroPortrait?: { _id: unknown; url: string; originalName: string; width?: number; height?: number } }>(
-        "heroPortrait",
-        "url originalName width height",
-      )
-      .populate<{ breakImage?: { _id: unknown; url: string; originalName: string; width?: number; height?: number } }>(
-        "breakImage",
-        "url originalName width height",
-      )
-      .populate<{ cvFile?: { _id: unknown; url: string; originalName: string } }>(
-        "cvFile",
-        "url originalName",
-      )
-      .populate<{ socialImage?: { _id: unknown; url: string; originalName: string; width?: number; height?: number } }>(
-        "socialImage",
-        "url originalName width height",
-      )
+      .populate<{
+        logo?: {
+          _id: unknown;
+          url: string;
+          originalName: string;
+          width?: number;
+          height?: number;
+        };
+      }>("logo", "url originalName width height")
+      .populate<{
+        heroPortrait?: {
+          _id: unknown;
+          url: string;
+          originalName: string;
+          width?: number;
+          height?: number;
+        };
+      }>("heroPortrait", "url originalName width height")
+      .populate<{
+        breakImage?: {
+          _id: unknown;
+          url: string;
+          originalName: string;
+          width?: number;
+          height?: number;
+        };
+      }>("breakImage", "url originalName width height")
+      .populate<{
+        cvFile?: { _id: unknown; url: string; originalName: string };
+      }>("cvFile", "url originalName")
+      .populate<{
+        socialImage?: {
+          _id: unknown;
+          url: string;
+          originalName: string;
+          width?: number;
+          height?: number;
+        };
+      }>("socialImage", "url originalName width height")
       .lean();
 
     if (!doc) {
@@ -165,12 +188,14 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
             height: doc.logo.height,
           }
         : null,
-      availability: (doc.availability as Availability) || defaultHero.availability,
+      availability:
+        (doc.availability as Availability) || defaultHero.availability,
       availabilityText: doc.availabilityText || defaultHero.availabilityText,
       location: doc.location || defaultHero.location,
 
       heroHeadingLine1: doc.heroHeadingLine1 || defaultHero.headingLine1,
-      heroHeadingLine2Prefix: doc.heroHeadingLine2Prefix || defaultHero.headingLine2Prefix,
+      heroHeadingLine2Prefix:
+        doc.heroHeadingLine2Prefix || defaultHero.headingLine2Prefix,
       heroRotatingWords:
         doc.heroRotatingWords && doc.heroRotatingWords.length > 0
           ? doc.heroRotatingWords
@@ -199,17 +224,14 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
 
       heroBadges: badges,
 
-      bioShort: doc.bioShort || "I build the systems Somali businesses run on. Six years of field work before the first line of code.",
-      bioLong: doc.bioLong || "I did not come to software from a computer. I came to it from a registration desk in a displacement camp, where I watched good people lose an entire day to a form that should have taken two minutes.",
+      bioShort: doc.bioShort || defaultBio.short,
+      bioLong: doc.bioLong || defaultBio.long,
       phone: doc.phone || defaultContact.phone || "",
       email: doc.email || defaultContact.email || "",
       socialLinks:
         doc.socialLinks && doc.socialLinks.length > 0
           ? doc.socialLinks.map((s) => ({ platform: s.platform, url: s.url }))
-          : [
-              { platform: "LinkedIn", url: "https://linkedin.com/in/" },
-              { platform: "GitHub", url: "https://github.com/Garsame" },
-            ],
+          : defaultSocialLinks,
       cvFile: doc.cvFile
         ? {
             id: String(doc.cvFile._id),
@@ -218,7 +240,8 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
           }
         : null,
 
-      clients: doc.clients && doc.clients.length > 0 ? doc.clients : defaultClients,
+      clients:
+        doc.clients && doc.clients.length > 0 ? doc.clients : defaultClients,
       faq: faqList,
       services: servicesList,
       processSteps: stepsList,
@@ -253,14 +276,11 @@ function getFallbackSettings(): PublicSiteSettings {
     breakImage: null,
     heroBadges: defaultHero.badges,
 
-    bioShort: "I build the systems Somali businesses run on. Six years of field work before the first line of code.",
-    bioLong: "I did not come to software from a computer. I came to it from a registration desk in a displacement camp, where I watched good people lose an entire day to a form that should have taken two minutes.",
+    bioShort: defaultBio.short,
+    bioLong: defaultBio.long,
     phone: defaultContact.phone || "",
     email: defaultContact.email || "",
-    socialLinks: [
-      { platform: "LinkedIn", url: "https://linkedin.com/in/" },
-      { platform: "GitHub", url: "https://github.com/Garsame" },
-    ],
+    socialLinks: defaultSocialLinks,
     cvFile: null,
 
     clients: defaultClients,

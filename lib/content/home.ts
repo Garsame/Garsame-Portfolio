@@ -76,6 +76,28 @@ export const hero = {
   ] satisfies HeroBadge[],
 };
 
+/* ---------------------------------------------------------------- about */
+
+/**
+ * Short and long bio — from Garsame's CV and the About page's own v1/v2/v3
+ * narrative. Previously duplicated as inline fallback strings in
+ * lib/settings.ts; this is now the one place they are written.
+ */
+export const bio = {
+  short:
+    "I build the systems Somali businesses run on. Six years of field work before the first line of code.",
+  long: "I did not come to software from a computer. I came to it from a registration desk in a displacement camp, where I watched good people lose an entire day to a form that should have taken two minutes.",
+};
+
+/** From the CV — linkedin.com/in/garsame-mohamud-iftin, github.com/Garsame. */
+export const socialLinks = [
+  {
+    platform: "LinkedIn",
+    url: "https://linkedin.com/in/garsame-mohamud-iftin",
+  },
+  { platform: "GitHub", url: "https://github.com/Garsame" },
+];
+
 /* --------------------------------------------------------------- clients */
 
 /** DECISIONS.md D-002 — real clients only, and Save the Children is a v1
@@ -247,11 +269,30 @@ export const faq = {
       answer:
         "It depends on what you need, and I will not pretend otherwise. What I will do is give you one written price before any work begins, split into phases, so you always know what is coming. Smaller systems cost less than most people expect.",
     },
-    /* design/34-admin-settings.html marks these four "NEEDS AN ANSWER". */
-    { question: "How long will it take?", answer: null },
-    { question: "Do I own it afterwards?", answer: null },
-    { question: "My staff are not technical. Can they use it?", answer: null },
-    { question: "What happens after it goes live?", answer: null },
+    /* Drafted at Garsame's request so the site is not left with unanswered
+       questions while real answers wait — he will revise these in the
+       admin. Each restates a promise or process step already approved
+       elsewhere on the page, rather than a new claim. */
+    {
+      question: "How long will it take?",
+      answer:
+        "It depends on the size of the system, but you will never be waiting in the dark. The work is split into phases, and at the end of each one you get something you can open and try — not a promise, an actual screen.",
+    },
+    {
+      question: "Do I own it afterwards?",
+      answer:
+        "Yes. The code, the database and the server are yours, with everything written down. If you ever decide to work with someone else, you can hand it over in an afternoon.",
+    },
+    {
+      question: "My staff are not technical. Can they use it?",
+      answer:
+        "That is the test I build to. If the person at the counter cannot use it on their first morning without help, I have not finished the job. Training is part of going live, not an extra.",
+    },
+    {
+      question: "What happens after it goes live?",
+      answer:
+        "I stay. Updates, backups and fixes happen every month for as long as you want me there, and if something breaks you call me — not a ticket number.",
+    },
   ] satisfies FaqItem[],
 };
 
@@ -292,8 +333,7 @@ export const membership = {
 export const contact = {
   paragraph:
     "Tell me what is slowing your business down. If I am the right person for it, I will say so and give you a price. If I am not, I will tell you that too.",
-  /** Bracketed until Garsame supplies it — needed from Phase 9. */
-  phone: null as string | null,
+  phone: "+252 616 172 443" as string | null,
   email: "garsame40@gmail.com",
   location: "Mogadishu, Somalia",
 };

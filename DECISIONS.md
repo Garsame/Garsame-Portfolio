@@ -759,8 +759,10 @@ re-run: it never overwrites an existing admin or edited settings.
 seeded before the admin, so a missing password does not also stop the content.
 
 Bio, short and long, and social links are left empty rather than invented; the
-phone stays empty and renders bracketed. The SMTP password is not seeded — it is
-stored encrypted, and encryption arrives in Phase 10.
+phone stays empty and renders bracketed. **Superseded by D-138**, the
+CV/content pass: real bio, phone, social links and a CV file are now seeded,
+once Garsame supplied them. The SMTP password is not seeded — it is stored
+encrypted, and encryption arrives in Phase 10.
 
 `npm run db:check` runs 37 checks against a database created for the run and
 dropped afterwards; it never touches the database named in `MONGODB_URI`. To
@@ -1029,6 +1031,10 @@ would break the section rhythm, so with nothing featured the first three
 published projects stand in.
 
 ### D-075 — the seeded projects, and what is a placeholder
+
+**Partly superseded by D-138** — SomaliNotes AI and Fursad have real case
+studies now; only Fursad's stack tag is still a placeholder. Left as written
+for the record of the state before the CV/content pass.
 
 Phase 6 seeds SomaliNotes AI, Heelan Home Health Care and Fursad. Every
 sentence comes from the approved screens; only Heelan has a written case study
@@ -1454,6 +1460,72 @@ words — no wider than "runs on" — and CLAUDE.md rule 10 means that is not
 something to invent here. Carried into the CV/content pass as a real question
 for Garsame: keep the current words (three-line headline, no code change), or
 supply replacements for "grows with" and "depends on" that fit.
+
+Answered in the CV/content pass below: kept as they are.
+
+---
+
+## CV and content pass
+
+### D-138 — real content from the CV replaces the remaining placeholders
+
+Garsame supplied his CV. Everything below is taken from it directly, not
+invented — CLAUDE.md rule 10.
+
+- **Phone** — `+252 616 172 443`, in `contact.phone` (`lib/content/home.ts`).
+  Was `null`.
+- **CV file** — the real PDF, at `public/documents/garsame-mohamud-cv.pdf`.
+  `scripts/seed.ts` gained `seedCvFile()`, which mirrors the
+  `placeholderCover()` pattern `seed-projects.ts` already used for the
+  placeholder covers: a `StoredFile` record pointing straight at a `public/`
+  asset, no upload pipeline needed since this is a build-time asset rather
+  than an admin upload. `Settings.cvFile` is set from it on seed.
+- **Bio** — `bioShort`/`bioLong` already had real fallback text hardcoded
+  twice in `lib/settings.ts` (not from the CV — written some time after
+  Phase 9, without a DECISIONS.md entry of its own). Moved into
+  `lib/content/home.ts` as `bio.short` / `bio.long`, the one place it is now
+  written, and both `getSiteSettings()`'s two fallback paths and
+  `scripts/seed.ts` read it from there. The text itself is unchanged — it
+  already lines up with the CV's field-work employers (DRC, MUDRO, PAH, Save
+  the Children) and the About page's v1 narrative.
+- **Social links** — real LinkedIn (`linkedin.com/in/garsame-mohamud-iftin`)
+  and GitHub (`github.com/Garsame`) URLs, replacing a placeholder LinkedIn
+  link with no username. New `socialLinks` export in `lib/content/home.ts`,
+  read the same way as `bio`.
+- **FAQ** — the four unanswered questions now have drafted answers, at
+  Garsame's explicit request ("complete the FAQ as you fill it and I will
+  change it later"). Each restates a promise or process step already
+  approved elsewhere on the page (the five-step process, "it belongs to
+  you", the monthly support plan) rather than inventing a new claim.
+- **SomaliNotes AI and Fursad case studies** — both were bracketed
+  placeholders (D-075); both now have a real problem, body and stack, taken
+  from the CV's "Baro Platform" and "JobAssistAI" entries respectively. Two
+  things changed beyond copy, both worth Garsame's own check rather than
+  assumed silently:
+  - **SomaliNotes AI's status moved from `live` to `completed`.** The CV
+    tags this project "RESEARCH", not "LIVE" — a final-year project,
+    evaluated and presented at HUMC 2026 — and gives it no live URL, unlike
+    every project the CV does call live (MadrasaHub, JobAssistAI, MGB,
+    NTW). `completed` is the closer fit of the four statuses the site has.
+    If it is in fact still reachable somewhere and "live" was intentional,
+    that is a one-line revert in the admin.
+  - **Fursad's status moved from `building` to `live`, with `liveUrl` set**
+    to `https://jobassistai.garsame.com` — the CV lists it live, with that
+    URL.
+  - **Fursad's stack is still a bracketed placeholder.** The CV itemises
+    Baro Platform's stack explicitly but not JobAssistAI's; general skills
+    across all five of Garsame's projects are listed once, not
+    per-project, so guessing which ones apply to this specific platform
+    would be presenting a guess as fact on a field the model requires to
+    publish. The one open item from this pass.
+- **Testimonials, portrait, rotating hero words, blog posts** — left alone,
+  at Garsame's explicit instruction for each: testimonials fill once the
+  site is live and real ones come in; the portrait goes in once he has it
+  ("it's already there the one i imported" — his own words, not acted on
+  here since nothing in this pass touched `heroPortrait`); rotating words
+  stay as they are (closes D-137); and the blog needed no new posts — three
+  real ones already exist in `scripts/seed-posts.ts`, seeded and published,
+  which D-034's "empty until Phase 8" note had not been updated to reflect.
 
 
 

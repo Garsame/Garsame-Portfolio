@@ -18,9 +18,12 @@
  * off in production, so the seed creates them deliberately.
  */
 
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import mongoose from "mongoose";
 import { dbConnect } from "../lib/db";
 import {
+  bio,
   clients,
   contact,
   faq,
@@ -28,8 +31,9 @@ import {
   process as processContent,
   services,
   site,
+  socialLinks,
 } from "../lib/content/home";
-import { ALL_MODELS, Settings, User } from "../models";
+import { ALL_MODELS, Settings, StoredFile, User } from "../models";
 import { seedProjects } from "./seed-projects";
 import { seedPosts } from "./seed-posts";
 import { seedMembersAndMessages } from "./seed-members-messages";
@@ -76,6 +80,26 @@ async function seedAdmin() {
   log(`admin      created (${admin.email})`);
 }
 
+/* The real CV, not a placeholder — public/documents/, the same pattern
+   seed-projects.ts uses for its placeholder covers: a StoredFile record
+   pointing straight at a public/ asset, no upload pipeline needed. */
+async function seedCvFile() {
+  const filename = "garsame-mohamud-cv.pdf";
+  const existing = await StoredFile.findOne({ filename });
+  if (existing) return existing._id;
+
+  const file = path.join(process.cwd(), "public", "documents", filename);
+  const created = await StoredFile.create({
+    filename,
+    originalName: "Garsame Mohamud Iftin — CV.pdf",
+    mimeType: "application/pdf",
+    size: readFileSync(file).length,
+    url: `/documents/${filename}`,
+    alt: "Garsame Mohamud Iftin — CV",
+  });
+  return created._id;
+}
+
 async function seedSettings() {
   if (await Settings.exists({ key: "site" })) {
     log("settings   exist — left unchanged");
@@ -99,11 +123,10 @@ async function seedSettings() {
   await Settings.create({
     key: "site",
 
-    /* Not in docs/ or design/ — left empty rather than invented (rule 10).
-       Written in Settings in Phase 9. */
-    bioShort: undefined,
-    bioLong: undefined,
-    socialLinks: [],
+    bioShort: bio.short,
+    bioLong: bio.long,
+    socialLinks,
+    cvFile: await seedCvFile(),
 
     phone: contact.phone ?? undefined,
     email: contact.email,
