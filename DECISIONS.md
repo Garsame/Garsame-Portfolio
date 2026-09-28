@@ -326,6 +326,9 @@ a back-button navigation, which an `onClick` handler on each link would miss.
 
 ### D-024 — the page transition is the enter half only
 
+**Superseded after Phase 13 — see D-135.** Left as written for the record of
+why the first attempt only did half the spec.
+
 `docs/02-DESIGN-SYSTEM.md` asks for the outgoing page to fade over 250ms and
 the incoming one to fade in and rise 12px over 400ms.
 
@@ -1383,6 +1386,74 @@ Production updates execute sequentially:
 4. `npm run db:seed` to ensure collections and unique indexes are synchronized.
 5. `pm2 reload ecosystem.config.cjs --env production` for rolling worker process restarts with zero dropped requests.
 6. Post-deployment verification querying `/api/health`.
+
+---
+
+## Post-launch polish
+
+### D-135 — the outgoing page fade, resolved
+
+D-024's blocker was structural: `app/(site)/template.tsx` remounts on every
+navigation, so by the time it could animate an exit, the outgoing tree was
+already gone — there was nothing left to hold onto.
+
+The fix moves the transition out of the template and into a client component,
+`components/site/PageTransition.tsx`, mounted once in `app/(site)/layout.tsx`
+(which does not remount on navigation). It reads `usePathname()` and keys a
+`motion.div` on it, wrapped in Framer Motion's `AnimatePresence`. Because the
+component's own identity persists across navigations, `AnimatePresence` can
+keep rendering the previous page's tree for the length of its exit animation
+even though the App Router has already moved on to the next route.
+
+`mode="popLayout"` is what avoids the delay D-024 worried about: the instant a
+page starts exiting, it is pulled out of layout flow (`position: absolute`),
+so the incoming page renders immediately in its place rather than waiting
+250ms for the exit to finish. `<main>` gained `relative` so that absolute
+positioning resolves against it rather than the nearest positioned ancestor
+further up the tree.
+
+The `hydrated` flag that skips the enter animation on first load (D-032) is
+now `useSyncExternalStore` with no-op subscribe, `() => true` client snapshot
+and `() => false` server snapshot — the standard hook for "false on the
+server and the hydrating render, true after" — rather than the module-level
+`let` template.tsx used. Two more direct attempts were rejected by ESLint
+first: a `useRef` read during render (`react-hooks/refs` — a ref read outside
+an effect or handler), then `useState` flipped inside a bare `useEffect`
+(`react-hooks/set-state-in-effect` — the same cascading-render risk D-023 was
+written to avoid). `useSyncExternalStore` re-renders once hydration finishes
+without either problem, because the snapshot check is built into the hook
+rather than a manual `setState` call.
+
+`app/(site)/template.tsx` is deleted; `PageTransition` replaces it entirely.
+
+### D-136 — D-013 needed no further decision
+
+Re-checked while revisiting D-024: the "still open" note under D-013 was about
+the on-ink `completed` chip specifically, and that was already closed in
+Phase 6 by D-073 — `--color-accent-on-ink` and `--color-accent-on-ink-bg` are
+both `color-mix()` results from `--color-blue`, the same family
+`--color-accent-ink` and `--color-accent-soft` (the light-mode `completed`
+chip) are themselves built from. Light and on-ink versions of the chip are the
+same hue at different mixes, not two different judgment calls. No code change
+was needed.
+
+### D-137 — the rotating hero words stay as they are; this is a copy decision, not a code one
+
+D-033 already made the layout side of this correct: no word can cause a
+layout shift, whatever its width, and the mechanism is not a bug. What is
+unresolved is that three of the four approved rotating words
+(`runs on`, `grows with`, `depends on` — `heroRotatingWords` in Settings,
+seeded from `lib/content/home.ts`) are wider than the 572px column at 52px
+allows on one line with `your business`, so the headline sits on three lines
+whenever one of those two is showing, rather than the two the design draws.
+
+Making the box reflow to each word's real width would fix the three-line
+layout but reintroduce the jump D-033 rejected; there is no code change that
+gets both. The only way back to the design's two-line headline is different
+words — no wider than "runs on" — and CLAUDE.md rule 10 means that is not
+something to invent here. Carried into the CV/content pass as a real question
+for Garsame: keep the current words (three-line headline, no code change), or
+supply replacements for "grows with" and "depends on" that fit.
 
 
 
