@@ -1527,6 +1527,89 @@ invented — CLAUDE.md rule 10.
   real ones already exist in `scripts/seed-posts.ts`, seeded and published,
   which D-034's "empty until Phase 8" note had not been updated to reflect.
 
+### D-139 — client avatars, drag-to-reorder, and the avatar-count bug
+
+Requested after testing the Settings admin: an avatar per client in the hero
+proof-row stack, with the count of avatars actually matching the number of
+clients, plus drag-to-reorder in Settings → Client list (there was only
+add/delete, no reordering at all).
+
+**The shape change.** `Settings.clients` was `string[]`; it is now
+`{ name: string; avatar?: ObjectId ref File }[]`. This is a breaking shape
+change to a field nothing in production depends on yet (the project has not
+launched), so no migration was written — `npm run db:seed` on a fresh
+database is the only path that has ever populated it. Every reader and
+writer touching `clients` was updated together: `models/Settings.ts`,
+`lib/settings.ts` (public read, with `clients.avatar` populated),
+`lib/admin/settings.ts` (admin read/write), `lib/content/home.ts` (the
+fallback, `{ name }[]`, no avatar — none exists to point at), and the three
+components that render it: `Hero.tsx`'s `ProofRow`, `SocialProof.tsx`'s
+`WorkingWith` (names only, that section never showed avatars), and
+`SettingsEditor.tsx`.
+
+**The avatar-count bug, separate from the new feature.** `ProofRow` rendered
+exactly three avatar circles always, regardless of how many clients existed
+— `avatars = ["bg-avatar-1", "bg-avatar-2", "bg-avatar-3"]` was a fixed
+three-element array, never derived from the client list. Two clients still
+showed three circles. D-038's "the avatar count is computed" was true only
+of the "+N" overflow number, not the circle count itself. Fixed:
+`shown = Math.min(clients.length, 3)`, so the stack never draws more avatars
+than there are clients. A client with no uploaded avatar falls back to a
+solid-colour circle, cycling through the three existing avatar tokens rather
+than always the first, so a run of unphotographed clients doesn't read as
+one flat colour.
+
+**The admin UI.** Each client row in Settings → Client list now has a drag
+handle, a circular avatar picker (opens the same `MediaPickerModal` used
+elsewhere in the admin), the name field, and delete — reordering uses
+Framer Motion's `Reorder.Group`/`Reorder.Item`, the same pattern
+`ProjectList.tsx` established for reordering projects (D-076), simplified
+since this list saves through the page's single "Save changes" button
+rather than persisting on every drop. Each row needs a stable identity for
+the drag animation that survives editing its name, which replaces the row's
+object on every keystroke — so rows carry a client-side-only `key`
+(`crypto.randomUUID()`, generated once when the editor loads or a client is
+added), stripped back out before the save payload is built. It is never
+sent to the server and never stored.
+
+### D-140 — admin button sizing, and a genuine env-var bug found alongside it
+
+Two unrelated things fixed together because both surfaced from the same
+round of testing.
+
+**Button sizing.** `components/ui/Button.tsx` already has a `size="xs"`
+built for exactly this — its own comment calls it "the admin top-bar
+button" — and most of the admin already uses it (`ProjectEditor`,
+`ProjectList`, `BlogEditor`, `UpdatesManager`). `SettingsEditor.tsx` and
+`BrandingEditor.tsx` did not: their "Save changes" top-bar buttons used
+`size="md"` (the public-site button size) and their inline "+ Add" actions
+used `size="sm"`, both a size up from the rest of the admin — which is what
+read as "a little bigger than they should appear." Four buttons moved to
+`xs`: Settings' "Save changes", "+ Add a question", "+ Add client", "Send a
+test email"; Branding's "Save changes" and the rotating-word "Add" button.
+Left alone: the standalone "Update password" button, which is a form
+submit in its own card, not a top-bar or inline admin action, so the `md`
+convention it already follows is the right one.
+
+**The SMTP env var mismatch.** While testing "Send a test email" with real
+Gmail credentials, it failed with nodemailer's "Missing credentials for
+PLAIN" — meaning the password nodemailer received was empty. `.env.example`
+documents `SMTP_PASSWORD`, `SMTP_FROM_NAME` and `SMTP_FROM_EMAIL`; the code
+reading them was three years out of sync with its own example file —
+`lib/email/mailer.ts`'s `getResolvedSmtpConfig()` read `process.env.SMTP_PASS`,
+`FROM_EMAIL` and `FROM_NAME`, none of which exist. `lib/admin/settings.ts`
+had the same `SMTP_PASS` mismatch in the "CONFIGURED" badge check. All four
+now read the names `.env.example` actually documents. This affects real
+sends (contact notifications, broadcasts) that fall back to env vars when
+nothing is saved in Settings yet.
+
+**Worth knowing, not a bug:** the admin's "Send a test email" button itself
+never reads environment variables at all, by design — it only uses whatever
+is typed into the SMTP Password field on that page, or whatever is already
+saved to `Settings.smtp.passEncrypted`. Env vars only seed the host/port/
+from-name/from-email defaults once, at `npm run db:seed` time. Testing SMTP
+from the admin means typing the password into that field directly.
+
 
 
 

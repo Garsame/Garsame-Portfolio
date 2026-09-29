@@ -1,18 +1,34 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
+import { Reorder, useDragControls, useReducedMotion } from "framer-motion";
 import { Button, Input, Textarea } from "@/components/ui";
 import {
   changePasswordAction,
   saveSettingsAction,
   testSmtpAction,
 } from "@/app/admin/(panel)/settings/actions";
-import type { AdminSettingsView } from "@/lib/admin/settings";
-import { LockIcon, TrashIcon } from "../icons";
+import type { AdminClient, AdminSettingsView } from "@/lib/admin/settings";
+import { cn } from "@/lib/utils";
+import { GripIcon, LockIcon, TrashIcon } from "../icons";
+import { MediaPickerModal } from "../MediaPickerModal";
 
 type Props = {
   initialData: AdminSettingsView;
 };
+
+/* A client row needs a stable identity for drag-to-reorder that survives
+   editing its name — which replaces the object on every keystroke — so it
+   carries its own client-side-only key, never sent to the server. */
+type EditableClient = AdminClient & { key: string };
+type EditableSettingsView = Omit<AdminSettingsView, "clients"> & {
+  clients: EditableClient[];
+};
+
+function withKeys(clients: AdminClient[]): EditableClient[] {
+  return clients.map((c) => ({ ...c, key: crypto.randomUUID() }));
+}
 
 type NavSection =
   | "about"
@@ -25,11 +41,16 @@ type NavSection =
   | "password";
 
 export function SettingsEditor({ initialData }: Props) {
-  const [data, setData] = useState<AdminSettingsView>(initialData);
+  const [data, setData] = useState<EditableSettingsView>(() => ({
+    ...initialData,
+    clients: withKeys(initialData.clients),
+  }));
   const [activeSection, setActiveSection] = useState<NavSection>("about");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [avatarPickerKey, setAvatarPickerKey] = useState<string | null>(null);
+  const reduced = useReducedMotion();
 
   // SMTP test states
   const [smtpStatus, setSmtpStatus] = useState<string | null>(null);
@@ -40,7 +61,10 @@ export function SettingsEditor({ initialData }: Props) {
   const [currentPass, setCurrentPass] = useState("");
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
-  const [passMessage, setPassMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const [passMessage, setPassMessage] = useState<{
+    text: string;
+    isError: boolean;
+  } | null>(null);
   const [updatingPass, setUpdatingPass] = useState(false);
 
   const handleSave = () => {
@@ -54,7 +78,10 @@ export function SettingsEditor({ initialData }: Props) {
         phone: data.phone,
         email: data.email,
         location: data.location,
-        clients: data.clients,
+        clients: data.clients.map((c) => ({
+          name: c.name,
+          avatarId: c.avatar?.id ?? null,
+        })),
         faq: data.faq,
         services: data.services,
         processSteps: data.processSteps,
@@ -104,7 +131,10 @@ export function SettingsEditor({ initialData }: Props) {
     setPassMessage(null);
 
     if (newPass.length < 12) {
-      setPassMessage({ text: "New password must be at least 12 characters.", isError: true });
+      setPassMessage({
+        text: "New password must be at least 12 characters.",
+        isError: true,
+      });
       return;
     }
     if (newPass !== confirmPass) {
@@ -116,9 +146,15 @@ export function SettingsEditor({ initialData }: Props) {
     try {
       const res = await changePasswordAction(currentPass, newPass);
       if (!res.success) {
-        setPassMessage({ text: res.error || "Password change failed.", isError: true });
+        setPassMessage({
+          text: res.error || "Password change failed.",
+          isError: true,
+        });
       } else {
-        setPassMessage({ text: "Password updated successfully.", isError: false });
+        setPassMessage({
+          text: "Password updated successfully.",
+          isError: false,
+        });
         setCurrentPass("");
         setNewPass("");
         setConfirmPass("");
@@ -148,7 +184,11 @@ export function SettingsEditor({ initialData }: Props) {
     }));
   };
 
-  const updateFaq = (idx: number, field: "question" | "answer", val: string) => {
+  const updateFaq = (
+    idx: number,
+    field: "question" | "answer",
+    val: string,
+  ) => {
     setData((p) => {
       const next = [...p.faq];
       next[idx] = { ...next[idx], [field]: val };
@@ -171,19 +211,39 @@ export function SettingsEditor({ initialData }: Props) {
   const removeFaq = (idx: number) => {
     setData((p) => ({
       ...p,
-      faq: p.faq.filter((_, i) => i !== idx).map((item, i) => ({ ...item, order: i + 1 })),
+      faq: p.faq
+        .filter((_, i) => i !== idx)
+        .map((item, i) => ({ ...item, order: i + 1 })),
     }));
   };
 
   // Client helpers
   const addClient = () => {
-    setData((p) => ({ ...p, clients: [...p.clients, "New Client Organization"] }));
+    setData((p) => ({
+      ...p,
+      clients: [
+        ...p.clients,
+        {
+          name: "New Client Organization",
+          avatar: null,
+          key: crypto.randomUUID(),
+        },
+      ],
+    }));
   };
 
-  const updateClient = (idx: number, val: string) => {
+  const updateClientName = (idx: number, val: string) => {
     setData((p) => {
       const next = [...p.clients];
-      next[idx] = val;
+      next[idx] = { ...next[idx], name: val };
+      return { ...p, clients: next };
+    });
+  };
+
+  const updateClientAvatar = (idx: number, avatar: AdminClient["avatar"]) => {
+    setData((p) => {
+      const next = [...p.clients];
+      next[idx] = { ...next[idx], avatar };
       return { ...p, clients: next };
     });
   };
@@ -193,6 +253,10 @@ export function SettingsEditor({ initialData }: Props) {
       ...p,
       clients: p.clients.filter((_, i) => i !== idx),
     }));
+  };
+
+  const reorderClients = (order: EditableClient[]) => {
+    setData((p) => ({ ...p, clients: order }));
   };
 
   return (
@@ -206,19 +270,24 @@ export function SettingsEditor({ initialData }: Props) {
           </span>
         </div>
 
-        <Button variant="primary" size="md" onClick={handleSave} disabled={isPending}>
+        <Button
+          variant="primary"
+          size="xs"
+          onClick={handleSave}
+          disabled={isPending}
+        >
           {isPending ? "Saving..." : saved ? "Saved!" : "Save changes"}
         </Button>
       </div>
 
       {error && (
-        <div className="m-6 rounded-card border border-red-200 bg-red-50 p-4 text-small text-red-600">
+        <div className="border-red-200 bg-red-50 text-red-600 m-6 rounded-card border p-4 text-small">
           {error}
         </div>
       )}
 
       {/* Settings Grid */}
-      <div className="grid flex-1 grid-cols-1 md:grid-cols-[210px_1fr] min-h-0">
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[210px_1fr]">
         {/* Left Sub-nav */}
         <div className="flex flex-col gap-1 border-r border-border bg-white p-5 text-small">
           {[
@@ -254,7 +323,7 @@ export function SettingsEditor({ initialData }: Props) {
               <h2 className="text-body font-bold text-ink">About you</h2>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-caption font-semibold text-ink-muted">
+                <label className="text-ink-muted text-caption font-semibold">
                   Short bio{" "}
                   <span className="font-normal text-muted">
                     — used under blog posts and in the footer
@@ -263,13 +332,15 @@ export function SettingsEditor({ initialData }: Props) {
                 <Textarea
                   rows={2}
                   value={data.bioShort}
-                  onChange={(e) => setData((p) => ({ ...p, bioShort: e.target.value }))}
+                  onChange={(e) =>
+                    setData((p) => ({ ...p, bioShort: e.target.value }))
+                  }
                   placeholder="Short one-paragraph bio..."
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-caption font-semibold text-ink-muted">
+                <label className="text-ink-muted text-caption font-semibold">
                   Long bio{" "}
                   <span className="font-normal text-muted">
                     — used on the About page
@@ -278,7 +349,9 @@ export function SettingsEditor({ initialData }: Props) {
                 <Textarea
                   rows={6}
                   value={data.bioLong}
-                  onChange={(e) => setData((p) => ({ ...p, bioLong: e.target.value }))}
+                  onChange={(e) =>
+                    setData((p) => ({ ...p, bioLong: e.target.value }))
+                  }
                   placeholder="Full narrative long bio..."
                 />
               </div>
@@ -292,35 +365,41 @@ export function SettingsEditor({ initialData }: Props) {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">
+                  <label className="text-ink-muted text-caption font-semibold">
                     Phone number
                   </label>
                   <Input
                     value={data.phone}
-                    onChange={(e) => setData((p) => ({ ...p, phone: e.target.value }))}
+                    onChange={(e) =>
+                      setData((p) => ({ ...p, phone: e.target.value }))
+                    }
                     placeholder="+252 61..."
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">
+                  <label className="text-ink-muted text-caption font-semibold">
                     Public contact email
                   </label>
                   <Input
                     type="email"
                     value={data.email}
-                    onChange={(e) => setData((p) => ({ ...p, email: e.target.value }))}
+                    onChange={(e) =>
+                      setData((p) => ({ ...p, email: e.target.value }))
+                    }
                     placeholder="garsame@example.com"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">
+                  <label className="text-ink-muted text-caption font-semibold">
                     Location
                   </label>
                   <Input
                     value={data.location}
-                    onChange={(e) => setData((p) => ({ ...p, location: e.target.value }))}
+                    onChange={(e) =>
+                      setData((p) => ({ ...p, location: e.target.value }))
+                    }
                     placeholder="Mogadishu, Somalia"
                   />
                 </div>
@@ -337,16 +416,17 @@ export function SettingsEditor({ initialData }: Props) {
                 {data.services.map((svc, idx) => (
                   <div
                     key={idx}
-                    className="flex flex-col gap-3 rounded-lg border border-border p-4 bg-tint/20"
+                    className="flex flex-col gap-3 rounded-lg border border-border bg-tint/20 p-4"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-[11px] font-semibold uppercase text-blue">
+                      <span className="font-mono text-[11px] font-semibold text-blue uppercase">
                         SERVICE 0{idx + 1}
                       </span>
                       <select
                         value={svc.icon}
                         onChange={(e) => {
-                          const iconVal = e.target.value as AdminSettingsView["services"][number]["icon"];
+                          const iconVal = e.target
+                            .value as AdminSettingsView["services"][number]["icon"];
                           setData((p) => {
                             const next = [...p.services];
                             next[idx] = { ...next[idx], icon: iconVal };
@@ -359,7 +439,9 @@ export function SettingsEditor({ initialData }: Props) {
                         <option value="phone">Phone / Mobile</option>
                         <option value="chart">Chart / Operations</option>
                         <option value="mail">Mail / Messages</option>
-                        <option value="automation">Automation / Workflow</option>
+                        <option value="automation">
+                          Automation / Workflow
+                        </option>
                         <option value="support">Support / Maintenance</option>
                       </select>
                     </div>
@@ -406,9 +488,9 @@ export function SettingsEditor({ initialData }: Props) {
                 {data.processSteps.map((step, idx) => (
                   <div
                     key={idx}
-                    className="flex flex-col gap-2.5 rounded-lg border border-border p-4 bg-tint/20"
+                    className="flex flex-col gap-2.5 rounded-lg border border-border bg-tint/20 p-4"
                   >
-                    <span className="font-mono text-[11px] font-semibold uppercase text-blue">
+                    <span className="font-mono text-[11px] font-semibold text-blue uppercase">
                       STEP 0{idx + 1}
                     </span>
 
@@ -455,7 +537,7 @@ export function SettingsEditor({ initialData }: Props) {
                     Questions and answers shown on the home page
                   </span>
                 </div>
-                <Button variant="secondary" size="sm" onClick={addFaqQuestion}>
+                <Button variant="secondary" size="xs" onClick={addFaqQuestion}>
                   + Add a question
                 </Button>
               </div>
@@ -473,7 +555,7 @@ export function SettingsEditor({ initialData }: Props) {
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 flex-1">
+                        <div className="flex flex-1 items-center gap-2">
                           <span className="font-mono text-caption font-semibold text-muted">
                             #{idx + 1}
                           </span>
@@ -511,7 +593,7 @@ export function SettingsEditor({ initialData }: Props) {
                           <button
                             type="button"
                             onClick={() => removeFaq(idx)}
-                            className="rounded p-1 text-muted hover:text-red-600"
+                            className="hover:text-red-600 rounded p-1 text-muted"
                             title="Delete question"
                           >
                             <TrashIcon className="h-3.5 w-3.5" />
@@ -521,17 +603,21 @@ export function SettingsEditor({ initialData }: Props) {
 
                       <Input
                         value={item.question}
-                        onChange={(e) => updateFaq(idx, "question", e.target.value)}
+                        onChange={(e) =>
+                          updateFaq(idx, "question", e.target.value)
+                        }
                         placeholder="Question title"
-                        className="font-bold text-small"
+                        className="text-small font-bold"
                       />
 
                       <Textarea
                         rows={3}
                         value={item.answer || ""}
-                        onChange={(e) => updateFaq(idx, "answer", e.target.value)}
+                        onChange={(e) =>
+                          updateFaq(idx, "answer", e.target.value)
+                        }
                         placeholder="Answer (optional placeholder will show if empty)..."
-                        className="text-small bg-white"
+                        className="bg-white text-small"
                       />
                     </div>
                   );
@@ -547,43 +633,65 @@ export function SettingsEditor({ initialData }: Props) {
                 <div>
                   <h2 className="text-body font-bold text-ink">Client list</h2>
                   <span className="font-mono text-caption text-muted">
-                    Organisations shown in the &quot;Working with&quot; home page strip
+                    Organisations shown in the &quot;Working with&quot; home
+                    page strip. Drag to reorder — this is also the order the
+                    hero avatar stack shows them in.
                   </span>
                 </div>
-                <Button variant="secondary" size="sm" onClick={addClient}>
+                <Button variant="secondary" size="xs" onClick={addClient}>
                   + Add client
                 </Button>
               </div>
 
-              <div className="flex flex-col gap-2.5">
+              <Reorder.Group
+                as="ul"
+                axis="y"
+                values={data.clients}
+                onReorder={reorderClients}
+                className="flex flex-col gap-2.5"
+              >
                 {data.clients.map((client, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <span className="font-mono text-caption text-muted w-6">{idx + 1}.</span>
-                    <Input
-                      value={client}
-                      onChange={(e) => updateClient(idx, e.target.value)}
-                      placeholder="Organization name"
-                      className="flex-1 font-semibold"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeClient(idx)}
-                      className="text-muted hover:text-red-600 p-1"
-                      title="Remove client"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </div>
+                  <ClientRow
+                    key={client.key}
+                    client={client}
+                    reduced={Boolean(reduced)}
+                    onNameChange={(val) => updateClientName(idx, val)}
+                    onPickAvatar={() => setAvatarPickerKey(client.key)}
+                    onRemoveAvatar={() => updateClientAvatar(idx, null)}
+                    onRemove={() => removeClient(idx)}
+                  />
                 ))}
-              </div>
+              </Reorder.Group>
             </div>
           )}
+
+          <MediaPickerModal
+            open={avatarPickerKey !== null}
+            onClose={() => setAvatarPickerKey(null)}
+            accept="images"
+            title="Select a client avatar"
+            onSelect={(file) => {
+              const idx = data.clients.findIndex(
+                (c) => c.key === avatarPickerKey,
+              );
+              if (idx !== -1) {
+                updateClientAvatar(idx, {
+                  id: file.id,
+                  url: file.url,
+                  originalName: file.originalName,
+                });
+              }
+              setAvatarPickerKey(null);
+            }}
+          />
 
           {/* Section: Email & SMTP */}
           {activeSection === "smtp" && (
             <div className="flex flex-col gap-5 rounded-card border border-border bg-white p-6 shadow-card">
               <div className="flex items-center justify-between">
-                <h2 className="text-body font-bold text-ink">Email &amp; SMTP</h2>
+                <h2 className="text-body font-bold text-ink">
+                  Email &amp; SMTP
+                </h2>
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-success">
                     <span className="h-2 w-2 rounded-full bg-success" />
@@ -591,7 +699,7 @@ export function SettingsEditor({ initialData }: Props) {
                   </span>
                   <Button
                     variant="secondary"
-                    size="sm"
+                    size="xs"
                     onClick={handleTestSmtp}
                     disabled={testingSmtp}
                   >
@@ -608,7 +716,9 @@ export function SettingsEditor({ initialData }: Props) {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="flex flex-col gap-1.5 sm:col-span-1">
-                  <label className="text-caption font-semibold text-ink-muted">Host</label>
+                  <label className="text-ink-muted text-caption font-semibold">
+                    Host
+                  </label>
                   <Input
                     value={data.smtp.host}
                     onChange={(e) =>
@@ -623,14 +733,19 @@ export function SettingsEditor({ initialData }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">Port</label>
+                  <label className="text-ink-muted text-caption font-semibold">
+                    Port
+                  </label>
                   <Input
                     type="number"
                     value={data.smtp.port}
                     onChange={(e) =>
                       setData((p) => ({
                         ...p,
-                        smtp: { ...p.smtp, port: Number(e.target.value) || 587 },
+                        smtp: {
+                          ...p.smtp,
+                          port: Number(e.target.value) || 587,
+                        },
                       }))
                     }
                     placeholder="587"
@@ -639,7 +754,9 @@ export function SettingsEditor({ initialData }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">Security</label>
+                  <label className="text-ink-muted text-caption font-semibold">
+                    Security
+                  </label>
                   <select
                     value={data.smtp.secure ? "ssl" : "starttls"}
                     onChange={(e) =>
@@ -658,7 +775,9 @@ export function SettingsEditor({ initialData }: Props) {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">Username</label>
+                  <label className="text-ink-muted text-caption font-semibold">
+                    Username
+                  </label>
                   <Input
                     value={data.smtp.user}
                     onChange={(e) =>
@@ -673,7 +792,9 @@ export function SettingsEditor({ initialData }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">From Name</label>
+                  <label className="text-ink-muted text-caption font-semibold">
+                    From Name
+                  </label>
                   <Input
                     value={data.smtp.fromName}
                     onChange={(e) =>
@@ -687,7 +808,9 @@ export function SettingsEditor({ initialData }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">From Email</label>
+                  <label className="text-ink-muted text-caption font-semibold">
+                    From Email
+                  </label>
                   <Input
                     type="email"
                     value={data.smtp.fromEmail}
@@ -704,7 +827,7 @@ export function SettingsEditor({ initialData }: Props) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-caption font-semibold text-ink-muted">
+                <label className="text-ink-muted text-caption font-semibold">
                   SMTP Password{" "}
                   <span className="font-normal text-muted">
                     {data.smtp.hasPassword
@@ -721,10 +844,12 @@ export function SettingsEditor({ initialData }: Props) {
                 />
               </div>
 
-              <div className="flex items-center gap-3 rounded-lg border border-border bg-[#F5F7FE] p-3 text-caption text-ink-muted">
-                <LockIcon className="h-4 w-4 text-muted shrink-0" />
+              <div className="text-ink-muted flex items-center gap-3 rounded-lg border border-border bg-[#F5F7FE] p-3 text-caption">
+                <LockIcon className="h-4 w-4 shrink-0 text-muted" />
                 <span>
-                  The password is encrypted at rest and never shown again after it is saved. Every send made with it is written to the mail log.
+                  The password is encrypted at rest and never shown again after
+                  it is saved. Every send made with it is written to the mail
+                  log.
                 </span>
               </div>
             </div>
@@ -732,12 +857,17 @@ export function SettingsEditor({ initialData }: Props) {
 
           {/* Section: Password */}
           {activeSection === "password" && (
-            <div className="flex flex-col gap-5 rounded-card border border-border bg-white p-6 shadow-card max-w-md">
-              <h2 className="text-body font-bold text-ink">Change Admin Password</h2>
+            <div className="flex max-w-md flex-col gap-5 rounded-card border border-border bg-white p-6 shadow-card">
+              <h2 className="text-body font-bold text-ink">
+                Change Admin Password
+              </h2>
 
-              <form onSubmit={handlePasswordChange} className="flex flex-col gap-4">
+              <form
+                onSubmit={handlePasswordChange}
+                className="flex flex-col gap-4"
+              >
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">
+                  <label className="text-ink-muted text-caption font-semibold">
                     Current Password
                   </label>
                   <Input
@@ -750,7 +880,7 @@ export function SettingsEditor({ initialData }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">
+                  <label className="text-ink-muted text-caption font-semibold">
                     New Password (min 12 characters)
                   </label>
                   <Input
@@ -764,7 +894,7 @@ export function SettingsEditor({ initialData }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-caption font-semibold text-ink-muted">
+                  <label className="text-ink-muted text-caption font-semibold">
                     Confirm New Password
                   </label>
                   <Input
@@ -781,8 +911,8 @@ export function SettingsEditor({ initialData }: Props) {
                   <p
                     className={`rounded p-3 text-caption font-medium ${
                       passMessage.isError
-                        ? "border border-red-200 bg-red-50 text-red-600"
-                        : "border border-green-200 bg-green-50 text-success"
+                        ? "border-red-200 bg-red-50 text-red-600 border"
+                        : "border-green-200 bg-green-50 border text-success"
                     }`}
                   >
                     {passMessage.text}
@@ -804,5 +934,101 @@ export function SettingsEditor({ initialData }: Props) {
         </div>
       </div>
     </div>
+  );
+}
+
+/* --------------------------------------------------------------- client row */
+
+function ClientRow({
+  client,
+  reduced,
+  onNameChange,
+  onPickAvatar,
+  onRemoveAvatar,
+  onRemove,
+}: {
+  client: AdminClient & { key: string };
+  reduced: boolean;
+  onNameChange: (val: string) => void;
+  onPickAvatar: () => void;
+  onRemoveAvatar: () => void;
+  onRemove: () => void;
+}) {
+  const controls = useDragControls();
+  const [dragging, setDragging] = useState(false);
+
+  return (
+    <Reorder.Item
+      as="li"
+      value={client}
+      dragListener={false}
+      dragControls={controls}
+      layout="position"
+      /* Reduced motion: rows jump to their new place instead of sliding. */
+      transition={reduced ? { duration: 0 } : undefined}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={() => setDragging(false)}
+      className={cn(
+        "flex items-center gap-2.5 rounded-input border bg-white p-2",
+        dragging ? "z-10 border-blue-wash" : "border-border",
+      )}
+    >
+      <button
+        type="button"
+        aria-label={`Reorder ${client.name || "client"}. Use the up and down arrow keys.`}
+        onPointerDown={(e) => controls.start(e)}
+        className="flex size-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-input text-faint transition-button hover:text-muted-strong active:cursor-grabbing"
+      >
+        <GripIcon />
+      </button>
+
+      <button
+        type="button"
+        onClick={onPickAvatar}
+        title="Change avatar"
+        aria-label={`Change avatar for ${client.name || "client"}`}
+        className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-dashed border-border bg-tint text-caption font-semibold text-muted transition-button hover:border-blue hover:text-blue"
+      >
+        {client.avatar ? (
+          <Image
+            src={client.avatar.url}
+            alt=""
+            width={36}
+            height={36}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          "+"
+        )}
+      </button>
+
+      <Input
+        value={client.name}
+        onChange={(e) => onNameChange(e.target.value)}
+        placeholder="Organization name"
+        className="flex-1 font-semibold"
+      />
+
+      {client.avatar ? (
+        <button
+          type="button"
+          onClick={onRemoveAvatar}
+          className="hover:text-red-600 font-mono text-[10px] text-muted"
+          title="Remove avatar, keep the client"
+        >
+          Remove photo
+        </button>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={onRemove}
+        className="hover:text-red-600 p-1 text-muted"
+        title="Remove client"
+        aria-label={`Remove ${client.name || "client"}`}
+      >
+        <TrashIcon className="h-4 w-4" />
+      </button>
+    </Reorder.Item>
   );
 }

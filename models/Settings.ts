@@ -58,7 +58,8 @@ export interface ISettings {
   }[];
   breakImage?: Types.ObjectId;
 
-  clients: string[];
+  /** Order is the drag order in Settings → Client list, top to bottom. */
+  clients: { name: string; avatar?: Types.ObjectId }[];
   faq: { question: string; answer?: string; order: number }[];
   services: {
     title: string;
@@ -151,7 +152,16 @@ const settingsSchema = new Schema<ISettings>(
     },
     breakImage: { type: Schema.Types.ObjectId, ref: "File" },
 
-    clients: { type: [{ type: String, trim: true }], default: [] },
+    clients: {
+      type: [
+        {
+          _id: false,
+          name: { type: String, required: true, trim: true },
+          avatar: { type: Schema.Types.ObjectId, ref: "File" },
+        },
+      ],
+      default: [],
+    },
     faq: {
       type: [
         {

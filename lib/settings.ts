@@ -49,7 +49,7 @@ export type PublicSiteSettings = {
   cvFile: PopulatedFile | null;
 
   // Sections
-  clients: string[];
+  clients: { name: string; avatar: PopulatedFile | null }[];
   faq: { question: string; answer?: string; order: number }[];
   services: {
     title: string;
@@ -121,6 +121,12 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
           height?: number;
         };
       }>("socialImage", "url originalName width height")
+      .populate<{
+        clients: {
+          name: string;
+          avatar?: { _id: unknown; url: string; originalName: string };
+        }[];
+      }>("clients.avatar", "url originalName")
       .lean();
 
     if (!doc) {
@@ -241,7 +247,18 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
         : null,
 
       clients:
-        doc.clients && doc.clients.length > 0 ? doc.clients : defaultClients,
+        doc.clients && doc.clients.length > 0
+          ? doc.clients.map((c) => ({
+              name: c.name,
+              avatar: c.avatar
+                ? {
+                    id: String(c.avatar._id),
+                    url: c.avatar.url,
+                    originalName: c.avatar.originalName,
+                  }
+                : null,
+            }))
+          : defaultClients.map((c) => ({ ...c, avatar: null })),
       faq: faqList,
       services: servicesList,
       processSteps: stepsList,
@@ -283,7 +300,7 @@ function getFallbackSettings(): PublicSiteSettings {
     socialLinks: defaultSocialLinks,
     cvFile: null,
 
-    clients: defaultClients,
+    clients: defaultClients.map((c) => ({ ...c, avatar: null })),
     faq: defaultFaq.items.map((f, i) => ({
       question: f.question,
       answer: f.answer || undefined,

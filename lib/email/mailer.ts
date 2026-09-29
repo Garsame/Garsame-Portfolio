@@ -35,13 +35,14 @@ export async function getResolvedSmtpConfig(): Promise<ResolvedSmtpConfig> {
       ? dbSmtp.secure
       : process.env.SMTP_SECURE === "true" || port === 465;
   const user = dbSmtp?.user || process.env.SMTP_USER || "";
-  const pass = dbSmtp?.passEncrypted || process.env.SMTP_PASS || "";
+  const pass = dbSmtp?.passEncrypted || process.env.SMTP_PASSWORD || "";
   const fromEmail =
     dbSmtp?.fromEmail ||
-    process.env.FROM_EMAIL ||
+    process.env.SMTP_FROM_EMAIL ||
     dbEmail ||
     "garsame40@gmail.com";
-  const fromName = dbSmtp?.fromName || process.env.FROM_NAME || "Garsame Mohamud";
+  const fromName =
+    dbSmtp?.fromName || process.env.SMTP_FROM_NAME || "Garsame Mohamud";
   const adminNotifyEmail =
     process.env.ADMIN_NOTIFICATION_EMAIL ||
     dbEmail ||

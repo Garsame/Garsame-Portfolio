@@ -1,15 +1,22 @@
 import "server-only";
 
 import { revalidatePath } from "next/cache";
+import { Types } from "mongoose";
 import { dbConnect } from "@/lib/db";
 import { Settings, User } from "@/models";
 import {
+  bio as defaultBio,
   clients as defaultClients,
   contact as defaultContact,
   faq as defaultFaq,
   process as defaultProcess,
   services as defaultServices,
 } from "@/lib/content/home";
+
+export type AdminClient = {
+  name: string;
+  avatar: { id: string; url: string; originalName: string } | null;
+};
 
 export type AdminSettingsView = {
   bioShort: string;
@@ -18,7 +25,7 @@ export type AdminSettingsView = {
   email: string;
   location: string;
 
-  clients: string[];
+  clients: AdminClient[];
   faq: { question: string; answer?: string; order: number }[];
   services: {
     title: string;
@@ -46,7 +53,7 @@ export type SaveSettingsPayload = {
   email: string;
   location: string;
 
-  clients: string[];
+  clients: { name: string; avatarId?: string | null }[];
   faq: { question: string; answer?: string; order: number }[];
   services: {
     title: string;
@@ -69,7 +76,15 @@ export type SaveSettingsPayload = {
 
 export async function getSettingsData(): Promise<AdminSettingsView> {
   await dbConnect();
-  const doc = await Settings.findOne({ key: "site" }).select("+smtp.passEncrypted").lean();
+  const doc = await Settings.findOne({ key: "site" })
+    .select("+smtp.passEncrypted")
+    .populate<{
+      clients: {
+        name: string;
+        avatar?: { _id: unknown; url: string; originalName: string };
+      }[];
+    }>("clients.avatar", "url originalName")
+    .lean();
 
   const servicesList =
     doc?.services && doc.services.length > 0
@@ -112,14 +127,28 @@ export async function getSettingsData(): Promise<AdminSettingsView> {
           order: idx + 1,
         }));
 
+  const clientsList: AdminClient[] =
+    doc?.clients && doc.clients.length > 0
+      ? doc.clients.map((c) => ({
+          name: c.name,
+          avatar: c.avatar
+            ? {
+                id: String(c.avatar._id),
+                url: c.avatar.url,
+                originalName: c.avatar.originalName,
+              }
+            : null,
+        }))
+      : defaultClients.map((c) => ({ ...c, avatar: null }));
+
   return {
-    bioShort: doc?.bioShort || "I build the systems Somali businesses run on. Six years of field work before the first line of code.",
-    bioLong: doc?.bioLong || "I did not come to software from a computer. I came to it from a registration desk in a displacement camp, where I watched good people lose an entire day to a form that should have taken two minutes.",
+    bioShort: doc?.bioShort || defaultBio.short,
+    bioLong: doc?.bioLong || defaultBio.long,
     phone: doc?.phone || defaultContact.phone || "",
     email: doc?.email || defaultContact.email || "",
     location: doc?.location || defaultContact.location || "Mogadishu, Somalia",
 
-    clients: doc?.clients && doc.clients.length > 0 ? doc.clients : defaultClients,
+    clients: clientsList,
     faq: faqList,
     services: servicesList,
     processSteps: stepsList,
@@ -127,11 +156,17 @@ export async function getSettingsData(): Promise<AdminSettingsView> {
     smtp: {
       host: doc?.smtp?.host || process.env.SMTP_HOST || "",
       port: doc?.smtp?.port || Number(process.env.SMTP_PORT) || 587,
-      secure: doc?.smtp?.secure ?? (process.env.SMTP_SECURE === "true"),
+      secure: doc?.smtp?.secure ?? process.env.SMTP_SECURE === "true",
       user: doc?.smtp?.user || process.env.SMTP_USER || "",
-      hasPassword: Boolean(doc?.smtp?.passEncrypted || process.env.SMTP_PASS),
-      fromName: doc?.smtp?.fromName || process.env.SMTP_FROM_NAME || "Garsame Mohamud",
-      fromEmail: doc?.smtp?.fromEmail || process.env.SMTP_FROM_EMAIL || "garsame@example.com",
+      hasPassword: Boolean(
+        doc?.smtp?.passEncrypted || process.env.SMTP_PASSWORD,
+      ),
+      fromName:
+        doc?.smtp?.fromName || process.env.SMTP_FROM_NAME || "Garsame Mohamud",
+      fromEmail:
+        doc?.smtp?.fromEmail ||
+        process.env.SMTP_FROM_EMAIL ||
+        "garsame@example.com",
     },
   };
 }
@@ -152,7 +187,12 @@ export async function saveSettingsData(
     doc.email = payload.email.trim().toLowerCase();
     doc.location = payload.location.trim().slice(0, 120);
 
-    doc.clients = payload.clients.map((c) => c.trim()).filter(Boolean);
+    doc.clients = payload.clients
+      .filter((c) => c.name.trim())
+      .map((c) => ({
+        name: c.name.trim(),
+        avatar: c.avatarId ? new Types.ObjectId(c.avatarId) : undefined,
+      }));
 
     doc.faq = payload.faq
       .filter((f) => f.question.trim())
@@ -288,7 +328,10 @@ export async function testSmtpConnection(config?: {
     console.error("[settings:testSmtp]", err);
     return {
       success: false,
-      message: err instanceof Error ? err.message : "Failed to connect to SMTP server.",
+      message:
+        err instanceof Error
+          ? err.message
+          : "Failed to connect to SMTP server.",
     };
   }
 }

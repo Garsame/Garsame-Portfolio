@@ -37,18 +37,22 @@ function enter(index: number): React.CSSProperties {
 
 export function Hero({ settings }: { settings?: PublicSiteSettings }) {
   const heading1 = settings?.heroHeadingLine1 || defaultHero.headingLine1;
-  const heading2Prefix = settings?.heroHeadingLine2Prefix || defaultHero.headingLine2Prefix;
-  const rotatingWords = settings?.heroRotatingWords && settings.heroRotatingWords.length > 0
-    ? settings.heroRotatingWords
-    : defaultHero.rotatingWords;
+  const heading2Prefix =
+    settings?.heroHeadingLine2Prefix || defaultHero.headingLine2Prefix;
+  const rotatingWords =
+    settings?.heroRotatingWords && settings.heroRotatingWords.length > 0
+      ? settings.heroRotatingWords
+      : defaultHero.rotatingWords;
   const paragraph = settings?.heroParagraph || defaultHero.paragraph;
-  const badges = settings?.heroBadges && settings.heroBadges.length === 3
-    ? settings.heroBadges
-    : defaultHero.badges;
+  const badges =
+    settings?.heroBadges && settings.heroBadges.length === 3
+      ? settings.heroBadges
+      : defaultHero.badges;
   const portrait = settings?.heroPortrait;
-  const clientsList = settings?.clients && settings.clients.length > 0
-    ? settings.clients
-    : defaultClients;
+  const clientsList =
+    settings?.clients && settings.clients.length > 0
+      ? settings.clients
+      : defaultClients.map((c) => ({ ...c, avatar: null }));
 
   return (
     <Section
@@ -61,7 +65,9 @@ export function Hero({ settings }: { settings?: PublicSiteSettings }) {
       <div className="flex flex-col gap-5.5">
         <StatusLine
           availability={settings?.availability || defaultHero.availability}
-          availabilityText={settings?.availabilityText || defaultHero.availabilityText}
+          availabilityText={
+            settings?.availabilityText || defaultHero.availabilityText
+          }
           location={settings?.location || defaultHero.location}
         />
 
@@ -151,12 +157,24 @@ function StatusLine({
 
 /* ------------------------------------------------------------ proof row */
 
-function ProofRow({ clients }: { clients: string[] }) {
-  const shown = 3;
+type ProofClient = {
+  name: string;
+  avatar: { url: string; originalName: string } | null;
+};
+
+/* Solid-colour fallback for a client with no avatar uploaded yet — cycles
+   through the three avatar tokens rather than always using the first, so a
+   row of un-photographed clients doesn't read as one flat colour. */
+const AVATAR_FALLBACK = ["bg-avatar-1", "bg-avatar-2", "bg-avatar-3"];
+
+function ProofRow({ clients }: { clients: ProofClient[] }) {
+  /* Exactly one avatar per client shown, never a fixed three — D-038 only
+     computed the "+N" overflow count, not this. */
+  const shown = Math.min(clients.length, 3);
+  const visible = clients.slice(0, shown);
   const extra = Math.max(clients.length - shown, 0);
-  const avatars = ["bg-avatar-1", "bg-avatar-2", "bg-avatar-3"];
-  const boldClients = clients.slice(0, 3);
-  const restClients = clients.slice(3);
+  const boldClients = clients.slice(0, 3).map((c) => c.name);
+  const restClients = clients.slice(3).map((c) => c.name);
 
   return (
     <div
@@ -164,15 +182,25 @@ function ProofRow({ clients }: { clients: string[] }) {
       className="flex animate-enter items-center gap-3.25 pt-3.5"
     >
       <div aria-hidden="true" className="flex shrink-0">
-        {avatars.map((bg, i) => (
+        {visible.map((client, i) => (
           <span
-            key={bg}
+            key={`${client.name}-${i}`}
             className={cn(
-              "size-avatar rounded-full border-2 border-white",
-              bg,
+              "size-avatar overflow-hidden rounded-full border-2 border-white",
+              !client.avatar && AVATAR_FALLBACK[i % AVATAR_FALLBACK.length],
               i > 0 && "-ml-avatar-overlap",
             )}
-          />
+          >
+            {client.avatar ? (
+              <Image
+                src={client.avatar.url}
+                alt=""
+                width={34}
+                height={34}
+                className="h-full w-full object-cover"
+              />
+            ) : null}
+          </span>
         ))}
         {extra > 0 ? (
           <span className="-ml-avatar-overlap flex size-avatar items-center justify-center rounded-full border-2 border-white bg-blue text-micro text-white">
@@ -183,9 +211,7 @@ function ProofRow({ clients }: { clients: string[] }) {
 
       <p className="text-caption text-ink-body">
         Working with{" "}
-        <span className="font-semibold text-ink">
-          {boldClients.join(", ")}
-        </span>
+        <span className="font-semibold text-ink">{boldClients.join(", ")}</span>
         {restClients.length > 0 && (
           <>
             <br />
@@ -203,13 +229,16 @@ function HeroArt({
   portrait,
   badges,
 }: {
-  portrait?: { url: string; originalName: string; width?: number; height?: number } | null;
+  portrait?: {
+    url: string;
+    originalName: string;
+    width?: number;
+    height?: number;
+  } | null;
   badges: HeroBadge[];
 }) {
   return (
-    <div
-      className="relative mx-auto flex h-(--hero-art-h) w-full max-w-(--hero-art-w) items-end justify-center"
-    >
+    <div className="relative mx-auto flex h-(--hero-art-h) w-full max-w-(--hero-art-w) items-end justify-center">
       <div
         aria-hidden="true"
         className="absolute bottom-(--hero-circle-1-bottom) left-1/2 size-(--hero-circle-1) -translate-x-1/2 rounded-full bg-hero-circle-1"

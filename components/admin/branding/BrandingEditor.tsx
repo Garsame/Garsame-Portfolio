@@ -90,7 +90,10 @@ export function BrandingEditor({ initialData }: Props) {
   const addSocialLink = () => {
     setData((prev) => ({
       ...prev,
-      socialLinks: [...prev.socialLinks, { platform: "Platform", url: "https://" }],
+      socialLinks: [
+        ...prev.socialLinks,
+        { platform: "Platform", url: "https://" },
+      ],
     }));
   };
 
@@ -118,7 +121,9 @@ export function BrandingEditor({ initialData }: Props) {
       {/* Top action bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-0.5">
-          <h1 className="text-display-sm font-bold text-ink">Branding &amp; Look</h1>
+          <h1 className="text-display-sm font-bold text-ink">
+            Branding &amp; Look
+          </h1>
           <span className="font-mono text-caption text-muted">
             everything visible on the site, except the colours
           </span>
@@ -132,14 +137,19 @@ export function BrandingEditor({ initialData }: Props) {
           >
             Preview home page ↗
           </Link>
-          <Button variant="primary" size="md" onClick={handleSave} disabled={isPending}>
+          <Button
+            variant="primary"
+            size="xs"
+            onClick={handleSave}
+            disabled={isPending}
+          >
             {isPending ? "Saving..." : saved ? "Saved!" : "Save changes"}
           </Button>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-card border border-red-200 bg-red-50 p-4 text-small text-red-600">
+        <div className="border-red-200 bg-red-50 text-red-600 rounded-card border p-4 text-small">
           {error}
         </div>
       )}
@@ -154,7 +164,9 @@ export function BrandingEditor({ initialData }: Props) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Logo */}
               <div className="flex flex-col gap-2">
-                <label className="text-caption font-semibold text-ink-muted">Logo</label>
+                <label className="text-ink-muted text-caption font-semibold">
+                  Logo
+                </label>
                 <div className="flex items-center justify-between rounded-lg border border-dashed border-[#C9D2F7] bg-[#F8FAFF] p-3.5">
                   {data.logo ? (
                     <div className="flex items-center gap-3">
@@ -166,16 +178,16 @@ export function BrandingEditor({ initialData }: Props) {
                           className="object-contain"
                         />
                       </div>
-                      <span className="font-mono text-caption text-ink truncate max-w-[100px]">
+                      <span className="max-w-[100px] truncate font-mono text-caption text-ink">
                         {data.logo.originalName}
                       </span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="text-body font-extrabold tracking-tight text-ink">
+                      <span className="tracking-tight text-body font-extrabold text-ink">
                         GARSAME
                       </span>
-                      <span className="bg-blue font-mono text-[9px] font-semibold text-white px-1.5 py-0.5 rounded-[2px]">
+                      <span className="rounded-[2px] bg-blue px-1.5 py-0.5 font-mono text-[9px] font-semibold text-white">
                         v3
                       </span>
                     </div>
@@ -193,14 +205,16 @@ export function BrandingEditor({ initialData }: Props) {
                       <button
                         type="button"
                         onClick={() => setData((p) => ({ ...p, logo: null }))}
-                        className="text-muted hover:text-red-600"
+                        className="hover:text-red-600 text-muted"
                         title="Reset to wordmark"
                       >
                         <TrashIcon className="h-3.5 w-3.5" />
                       </button>
                     )}
                     {!data.logo && (
-                      <span className="font-mono text-[10px] text-muted">using the wordmark</span>
+                      <span className="font-mono text-[10px] text-muted">
+                        using the wordmark
+                      </span>
                     )}
                   </div>
                 </div>
@@ -208,17 +222,17 @@ export function BrandingEditor({ initialData }: Props) {
 
               {/* Availability Status */}
               <div className="flex flex-col gap-2">
-                <label className="text-caption font-semibold text-ink-muted">
+                <label className="text-ink-muted text-caption font-semibold">
                   Availability status
                 </label>
                 <div className="flex items-center gap-3 rounded-lg border border-border bg-[#F8FAFF] p-2.5">
                   <span
-                    className={`h-2.5 w-2.5 rounded-full shrink-0 ${
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${
                       data.availability === "available"
                         ? "bg-success"
                         : data.availability === "limited"
-                        ? "bg-warning"
-                        : "bg-ink-body"
+                          ? "bg-warning"
+                          : "bg-ink-body"
                     }`}
                   />
                   <select
@@ -226,7 +240,8 @@ export function BrandingEditor({ initialData }: Props) {
                     onChange={(e) =>
                       setData((p) => ({
                         ...p,
-                        availability: e.target.value as BrandingView["availability"],
+                        availability: e.target
+                          .value as BrandingView["availability"],
                       }))
                     }
                     className="flex-1 bg-transparent text-small font-medium text-ink focus:outline-none"
@@ -255,7 +270,7 @@ export function BrandingEditor({ initialData }: Props) {
             {/* Headings */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label className="text-caption font-semibold text-ink-muted">
+                <label className="text-ink-muted text-caption font-semibold">
                   Heading, line one
                 </label>
                 <Input
@@ -268,7 +283,7 @@ export function BrandingEditor({ initialData }: Props) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-caption font-semibold text-ink-muted">
+                <label className="text-ink-muted text-caption font-semibold">
                   Heading, line two before the rotating word
                 </label>
                 <Input
@@ -286,7 +301,7 @@ export function BrandingEditor({ initialData }: Props) {
 
             {/* Rotating Words */}
             <div className="flex flex-col gap-2">
-              <label className="text-caption font-semibold text-ink-muted">
+              <label className="text-ink-muted text-caption font-semibold">
                 Rotating words
               </label>
               <div className="flex flex-wrap items-center gap-2">
@@ -325,7 +340,11 @@ export function BrandingEditor({ initialData }: Props) {
                       placeholder="new word..."
                       className="rounded border border-blue bg-white px-2 py-1 font-mono text-small focus:outline-none"
                     />
-                    <Button variant="primary" size="sm" onClick={addRotatingWord}>
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      onClick={addRotatingWord}
+                    >
                       Add
                     </Button>
                   </div>
@@ -343,7 +362,7 @@ export function BrandingEditor({ initialData }: Props) {
 
             {/* Paragraph */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-caption font-semibold text-ink-muted">
+              <label className="text-ink-muted text-caption font-semibold">
                 Paragraph
               </label>
               <Textarea
@@ -360,7 +379,7 @@ export function BrandingEditor({ initialData }: Props) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Portrait */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-caption font-semibold text-ink-muted">
+                <label className="text-ink-muted text-caption font-semibold">
                   Portrait
                 </label>
                 <div className="flex items-center justify-between rounded-lg border border-border bg-[#F8FAFF] p-2.5">
@@ -377,8 +396,10 @@ export function BrandingEditor({ initialData }: Props) {
                         <div className="h-full w-full bg-tint" />
                       )}
                     </div>
-                    <span className="font-mono text-caption text-ink-muted truncate max-w-[120px]">
-                      {data.heroPortrait ? data.heroPortrait.originalName : "Default portrait"}
+                    <span className="text-ink-muted max-w-[120px] truncate font-mono text-caption">
+                      {data.heroPortrait
+                        ? data.heroPortrait.originalName
+                        : "Default portrait"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -392,8 +413,10 @@ export function BrandingEditor({ initialData }: Props) {
                     {data.heroPortrait && (
                       <button
                         type="button"
-                        onClick={() => setData((p) => ({ ...p, heroPortrait: null }))}
-                        className="text-muted hover:text-red-600"
+                        onClick={() =>
+                          setData((p) => ({ ...p, heroPortrait: null }))
+                        }
+                        className="hover:text-red-600 text-muted"
                         title="Reset"
                       >
                         <TrashIcon className="h-3.5 w-3.5" />
@@ -405,7 +428,7 @@ export function BrandingEditor({ initialData }: Props) {
 
               {/* Break Image */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-caption font-semibold text-ink-muted">
+                <label className="text-ink-muted text-caption font-semibold">
                   Full-width break image
                 </label>
                 <div className="flex items-center justify-between rounded-lg border border-border bg-[#F8FAFF] p-2.5">
@@ -422,8 +445,10 @@ export function BrandingEditor({ initialData }: Props) {
                         <div className="h-full w-full bg-tint" />
                       )}
                     </div>
-                    <span className="font-mono text-caption text-ink-muted truncate max-w-[120px]">
-                      {data.breakImage ? data.breakImage.originalName : "Default break image"}
+                    <span className="text-ink-muted max-w-[120px] truncate font-mono text-caption">
+                      {data.breakImage
+                        ? data.breakImage.originalName
+                        : "Default break image"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -437,8 +462,10 @@ export function BrandingEditor({ initialData }: Props) {
                     {data.breakImage && (
                       <button
                         type="button"
-                        onClick={() => setData((p) => ({ ...p, breakImage: null }))}
-                        className="text-muted hover:text-red-600"
+                        onClick={() =>
+                          setData((p) => ({ ...p, breakImage: null }))
+                        }
+                        className="hover:text-red-600 text-muted"
                         title="Reset"
                       >
                         <TrashIcon className="h-3.5 w-3.5" />
@@ -452,12 +479,14 @@ export function BrandingEditor({ initialData }: Props) {
 
           {/* Three Hero Badges Card */}
           <div className="flex flex-col gap-4 rounded-card border border-border bg-white p-6 shadow-card">
-            <h2 className="text-body font-bold text-ink">The three hero badges</h2>
+            <h2 className="text-body font-bold text-ink">
+              The three hero badges
+            </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {data.heroBadges.map((badge, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col gap-2.5 rounded-lg border border-border p-3.5 bg-white"
+                  className="flex flex-col gap-2.5 rounded-lg border border-border bg-white p-3.5"
                 >
                   <span className="font-mono text-[10px] font-semibold text-muted uppercase">
                     BADGE {idx + 1}
@@ -466,7 +495,7 @@ export function BrandingEditor({ initialData }: Props) {
                     value={badge.label}
                     onChange={(e) => updateBadge(idx, "label", e.target.value)}
                     placeholder="LABEL"
-                    className="text-caption font-mono"
+                    className="font-mono text-caption"
                   />
                   <Input
                     value={badge.value}
@@ -481,9 +510,9 @@ export function BrandingEditor({ initialData }: Props) {
                       type="button"
                       onClick={() => updateBadge(idx, "tone", "warning")}
                       title="Warning (bolt)"
-                      className={`h-6 w-6 rounded bg-[#FEF3E4] border-2 transition-all ${
+                      className={`h-6 w-6 rounded border-2 bg-[#FEF3E4] transition-all ${
                         badge.tone === "warning"
-                          ? "border-[#B4690E] scale-110 shadow-xs"
+                          ? "shadow-xs scale-110 border-[#B4690E]"
                           : "border-transparent opacity-60 hover:opacity-100"
                       }`}
                     />
@@ -491,9 +520,9 @@ export function BrandingEditor({ initialData }: Props) {
                       type="button"
                       onClick={() => updateBadge(idx, "tone", "success")}
                       title="Success (check)"
-                      className={`h-6 w-6 rounded bg-[#E6F5ED] border-2 transition-all ${
+                      className={`h-6 w-6 rounded border-2 bg-[#E6F5ED] transition-all ${
                         badge.tone === "success"
-                          ? "border-[#1A7F4B] scale-110 shadow-xs"
+                          ? "shadow-xs scale-110 border-[#1A7F4B]"
                           : "border-transparent opacity-60 hover:opacity-100"
                       }`}
                     />
@@ -501,9 +530,9 @@ export function BrandingEditor({ initialData }: Props) {
                       type="button"
                       onClick={() => updateBadge(idx, "tone", "accent")}
                       title="Accent (clock)"
-                      className={`h-6 w-6 rounded bg-[#EDF0FE] border-2 transition-all ${
+                      className={`h-6 w-6 rounded border-2 bg-[#EDF0FE] transition-all ${
                         badge.tone === "accent"
-                          ? "border-[#3D5AF1] scale-110 shadow-xs"
+                          ? "shadow-xs scale-110 border-[#3D5AF1]"
                           : "border-transparent opacity-60 hover:opacity-100"
                       }`}
                     />
@@ -520,10 +549,14 @@ export function BrandingEditor({ initialData }: Props) {
           <div className="flex flex-col gap-3 rounded-card bg-[#0E1533] p-5 text-white shadow-card">
             <div className="flex items-center gap-2">
               <LockIcon className="h-4 w-4 text-[#7B90FF]" />
-              <span className="text-small font-bold text-white">Colours are locked</span>
+              <span className="text-small font-bold text-white">
+                Colours are locked
+              </span>
             </div>
             <p className="text-caption leading-relaxed text-[#96A1C4]">
-              The palette lives in the code where it was designed, so the site cannot be broken from this screen. Changing it is a deploy, not a setting — by your own decision.
+              The palette lives in the code where it was designed, so the site
+              cannot be broken from this screen. Changing it is a deploy, not a
+              setting — by your own decision.
             </p>
           </div>
 
@@ -545,20 +578,24 @@ export function BrandingEditor({ initialData }: Props) {
                 <div key={idx} className="flex items-center gap-2">
                   <Input
                     value={link.platform}
-                    onChange={(e) => updateSocialLink(idx, "platform", e.target.value)}
+                    onChange={(e) =>
+                      updateSocialLink(idx, "platform", e.target.value)
+                    }
                     placeholder="Platform"
                     className="w-24 text-caption font-semibold"
                   />
                   <Input
                     value={link.url}
-                    onChange={(e) => updateSocialLink(idx, "url", e.target.value)}
+                    onChange={(e) =>
+                      updateSocialLink(idx, "url", e.target.value)
+                    }
                     placeholder="https://..."
-                    className="flex-1 text-caption font-mono"
+                    className="flex-1 font-mono text-caption"
                   />
                   <button
                     type="button"
                     onClick={() => removeSocialLink(idx)}
-                    className="text-muted hover:text-red-600"
+                    className="hover:text-red-600 text-muted"
                     title="Remove link"
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
@@ -573,11 +610,18 @@ export function BrandingEditor({ initialData }: Props) {
             <h3 className="text-small font-bold text-ink">CV Download File</h3>
             <div className="flex items-center justify-between rounded-lg border border-border bg-[#F8FAFF] p-3">
               <div className="flex items-center gap-2 truncate">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7D89AE" strokeWidth="1.5">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#7D89AE"
+                  strokeWidth="1.5"
+                >
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <path d="M14 2v6h6" />
                 </svg>
-                <span className="font-mono text-caption text-ink truncate max-w-[130px]">
+                <span className="max-w-[130px] truncate font-mono text-caption text-ink">
                   {data.cvFile ? data.cvFile.originalName : "No CV uploaded"}
                 </span>
               </div>
@@ -593,7 +637,7 @@ export function BrandingEditor({ initialData }: Props) {
                   <button
                     type="button"
                     onClick={() => setData((p) => ({ ...p, cvFile: null }))}
-                    className="text-muted hover:text-red-600"
+                    className="hover:text-red-600 text-muted"
                     title="Remove"
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
@@ -606,10 +650,14 @@ export function BrandingEditor({ initialData }: Props) {
           {/* Meta & Social Sharing Card */}
           <div className="flex flex-col gap-3 rounded-card border border-border bg-white p-5 shadow-card">
             <div className="flex items-center justify-between">
-              <h3 className="text-small font-bold text-ink">Meta &amp; Sharing</h3>
+              <h3 className="text-small font-bold text-ink">
+                Meta &amp; Sharing
+              </h3>
               <span
                 className={`font-mono text-[11px] ${
-                  data.metaDescription.length > 160 ? "text-red-600 font-bold" : "text-muted"
+                  data.metaDescription.length > 160
+                    ? "text-red-600 font-bold"
+                    : "text-muted"
                 }`}
               >
                 {data.metaDescription.length}/160
@@ -619,13 +667,15 @@ export function BrandingEditor({ initialData }: Props) {
             <Textarea
               rows={3}
               value={data.metaDescription}
-              onChange={(e) => setData((p) => ({ ...p, metaDescription: e.target.value }))}
+              onChange={(e) =>
+                setData((p) => ({ ...p, metaDescription: e.target.value }))
+              }
               placeholder="SEO meta description..."
               className="text-caption"
             />
 
             <div className="flex flex-col gap-1.5 pt-1">
-              <label className="text-caption font-semibold text-ink-muted">
+              <label className="text-ink-muted text-caption font-semibold">
                 Social Share Image
               </label>
               <div className="flex items-center justify-between rounded-lg border border-border bg-[#F8FAFF] p-2.5">
@@ -640,8 +690,10 @@ export function BrandingEditor({ initialData }: Props) {
                       />
                     )}
                   </div>
-                  <span className="font-mono text-caption text-ink-muted truncate max-w-[120px]">
-                    {data.socialImage ? data.socialImage.originalName : "Default OG image"}
+                  <span className="text-ink-muted max-w-[120px] truncate font-mono text-caption">
+                    {data.socialImage
+                      ? data.socialImage.originalName
+                      : "Default OG image"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -655,8 +707,10 @@ export function BrandingEditor({ initialData }: Props) {
                   {data.socialImage && (
                     <button
                       type="button"
-                      onClick={() => setData((p) => ({ ...p, socialImage: null }))}
-                      className="text-muted hover:text-red-600"
+                      onClick={() =>
+                        setData((p) => ({ ...p, socialImage: null }))
+                      }
+                      className="hover:text-red-600 text-muted"
                     >
                       <TrashIcon className="h-3.5 w-3.5" />
                     </button>
@@ -678,12 +732,12 @@ export function BrandingEditor({ initialData }: Props) {
             pickerTarget === "cvFile"
               ? "Select CV Document (PDF)"
               : pickerTarget === "logo"
-              ? "Select Site Logo"
-              : pickerTarget === "heroPortrait"
-              ? "Select Hero Portrait"
-              : pickerTarget === "breakImage"
-              ? "Select Full-Width Break Image"
-              : "Select Social Sharing Image"
+                ? "Select Site Logo"
+                : pickerTarget === "heroPortrait"
+                  ? "Select Hero Portrait"
+                  : pickerTarget === "breakImage"
+                    ? "Select Full-Width Break Image"
+                    : "Select Social Sharing Image"
           }
           onSelect={(file) => {
             setData((prev) => ({

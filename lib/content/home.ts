@@ -100,20 +100,18 @@ export const socialLinks = [
 
 /* --------------------------------------------------------------- clients */
 
-/** DECISIONS.md D-002 — real clients only, and Save the Children is a v1
-    employer rather than a client. */
-export const clients = [
-  "Heelan Home Health Care",
-  "MGH",
-  "Hormuud University",
-  "Carshi Restaurant",
+/**
+ * DECISIONS.md D-002 — real clients only, and Save the Children is a v1
+ * employer rather than a client. Each carries an optional avatar (a small
+ * logo or photo for the hero proof-row stack), set in Settings — none is
+ * seeded here, since there is no real image to point at yet. D-139.
+ */
+export const clients: { name: string }[] = [
+  { name: "Heelan Home Health Care" },
+  { name: "MGH" },
+  { name: "Hormuud University" },
+  { name: "Carshi Restaurant" },
 ];
-
-/** The short forms the hero proof row uses — design/01-home section 01. */
-export const proofRowNames = {
-  bold: ["Heelan", "MGH", "Hormuud University"],
-  rest: ["Carshi Restaurant"],
-};
 
 /* --------------------------------------------------------------- promise */
 

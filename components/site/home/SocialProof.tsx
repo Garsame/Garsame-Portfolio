@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 export function WorkingWith({
   clients = defaultClients,
 }: {
-  clients?: string[];
+  clients?: { name: string }[];
 }) {
   return (
     <Section
@@ -41,8 +41,8 @@ export function WorkingWith({
       </h2>
       <ul className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-center">
         {clients.map((client) => (
-          <li key={client} className="text-client text-muted-strong">
-            {client}
+          <li key={client.name} className="text-client text-muted-strong">
+            {client.name}
           </li>
         ))}
       </ul>
@@ -126,7 +126,9 @@ export function Faq({
             accent="get in touch"
             id="faq-heading"
           />
-          <p className="text-body leading-loose text-ink-body">{defaultFaq.sub}</p>
+          <p className="text-body leading-loose text-ink-body">
+            {defaultFaq.sub}
+          </p>
         </div>
 
         <div className="flex flex-col gap-2.75">
@@ -166,11 +168,7 @@ export function Faq({
    11 Latest from the blog — white.
    ====================================================================== */
 
-export function LatestPosts({
-  posts = [],
-}: {
-  posts?: BlogPostSummaryView[];
-}) {
+export function LatestPosts({ posts = [] }: { posts?: BlogPostSummaryView[] }) {
   return (
     <Section tone="white" aria-labelledby="blog-heading">
       <div className="mb-10.5 flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-10">
