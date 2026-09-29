@@ -1610,6 +1610,37 @@ saved to `Settings.smtp.passEncrypted`. Env vars only seed the host/port/
 from-name/from-email defaults once, at `npm run db:seed` time. Testing SMTP
 from the admin means typing the password into that field directly.
 
+### D-141 — SMTP "Connection timeout" with real Gmail credentials: force IPv4
+
+With the D-140 env-var fix in place and a real Gmail app password entered
+directly in the admin, "Send a test email" still failed — this time with
+"Connection timeout" rather than a credentials error. `Test-NetConnection
+smtp.gmail.com -Port 587` from the same machine succeeded immediately
+(`TcpTestSucceeded: True`, resolving to an IPv4 address), which rules out
+the network or a firewall blocking the port outright — something more
+specific was going on inside Node.
+
+The cause: `smtp.gmail.com` resolves to both an IPv4 and an IPv6 address.
+Node's default DNS resolution can hand nodemailer's underlying `net.connect`
+an IPv6 address, and on a network that advertises IPv6 routing without it
+actually working end-to-end — common enough on Windows behind a campus or
+office network — that connection attempt hangs until `connectionTimeout`
+rather than failing fast and falling back to IPv4. A plain external test
+that resolves and connects via IPv4 (as `Test-NetConnection` did here) never
+hits this path at all, which is why the two gave different results on the
+same machine.
+
+Both transporters (`lib/admin/settings.ts`'s `testSmtpConnection` and
+`lib/email/mailer.ts`'s `getMailTransporter`) now pass `family: 4`, forcing
+IPv4 and skipping the ambiguity entirely. nodemailer's TypeScript types
+don't declare `family` — it isn't validated, just passed straight through
+to `net.connect`/`tls.connect`, which do support it — so the options object
+in both places is now built as a typed local variable
+(`SMTPTransport.Options & { family?: 4 | 6 }`, `SMTPTransport` imported
+type-only from `nodemailer/lib/smtp-transport`) rather than an inline
+literal, which sidesteps TypeScript's excess-property check on object
+literals without resorting to `as any`.
+
 
 
 

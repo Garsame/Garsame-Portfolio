@@ -2,6 +2,7 @@ import "server-only";
 
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import { dbConnect } from "@/lib/db";
 import { Settings } from "@/models";
 
@@ -81,7 +82,11 @@ export async function getMailTransporter(): Promise<{
     return { transporter: testTransporter, config };
   }
 
-  const transporter = nodemailer.createTransport({
+  /* nodemailer's own types don't declare `family`, though it passes
+     straight through to Node's net.connect, which does support it — a
+     typed local variable (rather than an inline literal) sidesteps
+     TypeScript's excess-property check on the object literal. */
+  const transportOptions: SMTPTransport.Options & { family?: 4 | 6 } = {
     host: config.host,
     port: config.port,
     secure: config.secure,
@@ -89,10 +94,17 @@ export async function getMailTransporter(): Promise<{
       user: config.user,
       pass: config.pass,
     },
+    /* Node's DNS lookup can hand a connection an IPv6 address that a
+       network advertises but doesn't actually route — the socket then
+       hangs until connectionTimeout instead of failing fast, even though a
+       plain IPv4 connection to the same host works. Forcing IPv4 skips that
+       entirely. */
+    family: 4,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
-  });
+  };
+  const transporter = nodemailer.createTransport(transportOptions);
 
   return { transporter, config };
 }

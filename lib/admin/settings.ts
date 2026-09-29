@@ -2,6 +2,7 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import { dbConnect } from "@/lib/db";
 import { Settings, User } from "@/models";
 import {
@@ -280,7 +281,11 @@ export async function testSmtpConnection(config?: {
       pass = existing?.smtp?.passEncrypted || "";
     }
 
-    const transporter = nodemailer.createTransport({
+    /* nodemailer's own types don't declare `family`, though it passes
+       straight through to Node's net.connect, which does support it — a
+       typed local variable (rather than an inline literal) sidesteps
+       TypeScript's excess-property check on the object literal. */
+    const transportOptions: SMTPTransport.Options & { family?: 4 | 6 } = {
       host: config.host,
       port: config.port,
       secure: config.secure,
@@ -288,9 +293,16 @@ export async function testSmtpConnection(config?: {
         user: config.user,
         pass,
       },
+      /* Node's DNS lookup can hand a connection an IPv6 address that a
+         network advertises but doesn't actually route — the socket then
+         hangs until connectionTimeout instead of failing fast, even though
+         a plain IPv4 connection to the same host works. Forcing IPv4 skips
+         that entirely. */
+      family: 4,
       connectionTimeout: 8000,
       greetingTimeout: 8000,
-    });
+    };
+    const transporter = nodemailer.createTransport(transportOptions);
 
     await transporter.verify();
 
