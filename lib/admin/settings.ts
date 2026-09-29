@@ -75,15 +75,40 @@ export type SaveSettingsPayload = {
   };
 };
 
+/**
+ * `clients` was `string[]` before D-139. A Settings document seeded or
+ * saved before that change still has raw strings stored where the schema
+ * now expects `{ name, avatar }`, and Mongoose's `.lean()` returns exactly
+ * what's stored — no casting. Normalizing on read means the first `Save
+ * changes` after loading this page rewrites it to the new shape, so no
+ * separate migration script is needed.
+ */
+function normalizeClient(
+  c:
+    | string
+    | {
+        name: string;
+        avatar?: { _id: unknown; url: string; originalName: string };
+      },
+): {
+  name: string;
+  avatar?: { _id: unknown; url: string; originalName: string };
+} {
+  return typeof c === "string" ? { name: c } : c;
+}
+
 export async function getSettingsData(): Promise<AdminSettingsView> {
   await dbConnect();
   const doc = await Settings.findOne({ key: "site" })
     .select("+smtp.passEncrypted")
     .populate<{
-      clients: {
-        name: string;
-        avatar?: { _id: unknown; url: string; originalName: string };
-      }[];
+      clients: (
+        | string
+        | {
+            name: string;
+            avatar?: { _id: unknown; url: string; originalName: string };
+          }
+      )[];
     }>("clients.avatar", "url originalName")
     .lean();
 
@@ -130,7 +155,7 @@ export async function getSettingsData(): Promise<AdminSettingsView> {
 
   const clientsList: AdminClient[] =
     doc?.clients && doc.clients.length > 0
-      ? doc.clients.map((c) => ({
+      ? doc.clients.map(normalizeClient).map((c) => ({
           name: c.name,
           avatar: c.avatar
             ? {
@@ -189,7 +214,7 @@ export async function saveSettingsData(
     doc.location = payload.location.trim().slice(0, 120);
 
     doc.clients = payload.clients
-      .filter((c) => c.name.trim())
+      .filter((c) => c.name?.trim())
       .map((c) => ({
         name: c.name.trim(),
         avatar: c.avatarId ? new Types.ObjectId(c.avatarId) : undefined,

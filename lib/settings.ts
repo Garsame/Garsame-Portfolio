@@ -78,6 +78,27 @@ function mapToneToIcon(
   }
 }
 
+/**
+ * `clients` was `string[]` before D-139. A Settings document seeded or
+ * saved before that change still has raw strings stored where the schema
+ * now expects `{ name, avatar }`, and Mongoose's `.lean()` returns exactly
+ * what's stored — no casting. Normalizing on read means the site never
+ * shows a broken client name for data saved under the old shape.
+ */
+function normalizeClient(
+  c:
+    | string
+    | {
+        name: string;
+        avatar?: { _id: unknown; url: string; originalName: string };
+      },
+): {
+  name: string;
+  avatar?: { _id: unknown; url: string; originalName: string };
+} {
+  return typeof c === "string" ? { name: c } : c;
+}
+
 export async function getSiteSettings(): Promise<PublicSiteSettings> {
   try {
     await dbConnect();
@@ -122,10 +143,13 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
         };
       }>("socialImage", "url originalName width height")
       .populate<{
-        clients: {
-          name: string;
-          avatar?: { _id: unknown; url: string; originalName: string };
-        }[];
+        clients: (
+          | string
+          | {
+              name: string;
+              avatar?: { _id: unknown; url: string; originalName: string };
+            }
+        )[];
       }>("clients.avatar", "url originalName")
       .lean();
 
@@ -248,7 +272,7 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
 
       clients:
         doc.clients && doc.clients.length > 0
-          ? doc.clients.map((c) => ({
+          ? doc.clients.map(normalizeClient).map((c) => ({
               name: c.name,
               avatar: c.avatar
                 ? {
